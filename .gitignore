@@ -265,12 +265,10 @@ relay_emulator/gen_event
 relay_emulator/goose_publisher
 trip_master_v2/trip_master
 trip_master/trip_master
-proxy_iec61850/dst_proxy_vr2
-proxy_iec61850/pnnl_simple_cb_proxy
-proxy_iec61850/counting_dst_proxy
-proxy_iec61850/dst_proxy
-proxy_iec61850/pnnl_relay_proxy
 proxy_iec61850/relay_proxy
+proxy_iec61850/simple_cb_proxy
+proxy_iec61850/counting_cb_proxy
+proxy_iec61850/pnnl_relay_proxy
 trip_master_v2/gen_keys
 trip_master/gen_keys
 benchmarks_ss/benchmark2
