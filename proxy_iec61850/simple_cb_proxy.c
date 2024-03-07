@@ -263,7 +263,7 @@ int main(int argc, char** argv)
     int     ret;
 
 
-    sleep(15);
+    sleep(2);
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     Alarm_set_types(PRINT);
@@ -274,9 +274,11 @@ int main(int argc, char** argv)
     Load_SS_Conf(My_ID);
 
     /* Initialize crypto stuff */
-    TC_Read_Public_Key("../trip_master/tm_keys"); 
+    TC_Read_Public_Key("../trip_master/tm_keys");
+    Alarm(DEBUG,"Opened TC pub key\n"); 
     OPENSSL_RSA_Init();
     OPENSSL_RSA_Read_Keys(Prime_Client_ID, RSA_RTU_CC, "../prime/bin/keys");
+    Alarm(DEBUG,"Opened Prime RSA keys\n"); 
 
     /* Breaker State is Unknown*/
     b_state=-1;
@@ -533,6 +535,7 @@ static void PROXY_Send_Ack()
         }
     }
     Alarm(STATUS,"Sent %s recovery ack at dts=%lu\n",b_state == STATE_CLOSE? "CLOSE":"TRIP",dts);
+    send_to_cc();
 }
 
 static void PROXY_Send_Breaker_Ack()
@@ -561,6 +564,7 @@ static void PROXY_Send_Breaker_Ack()
         }
     }
     Alarm(STATUS,"Sent %s breaker ack at dts=%lu\n",b_state == STATE_CLOSE? "CLOSE":"TRIP",dts);
+
 }
 
 
@@ -681,12 +685,19 @@ static void print_notice()
 
 static void usage(int argc, char **argv)
 {
+    struct timeval now;
     count=0;
     if (argc!=3){
         Alarm(EXIT,"Usage: sudo ./pnnl_simple_cb_proxy interface SSID\n");
     }
     interface=argv[1];
     My_ID=atoi(argv[2]);
+
+    Type = RTU_TYPE;
+    Prime_Client_ID = (NUM_SM +1) + My_ID;
+    seq_num = 1;
+    gettimeofday(&now, NULL);
+    My_Incarnation = now.tv_sec;
 
     return;
 }
