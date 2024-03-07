@@ -72,12 +72,15 @@
 #define int32u uint32_t
 #endif
 
-extern char* Relay_Int_Addrs[NUM_REPLICAS];
-extern char* Relay_Ext_Addrs[NUM_REPLICAS];
-
+extern char Relay_Int_Addrs[NUM_REPLICAS][32];
+extern char Relay_Ext_Addrs[NUM_REPLICAS][32];
+extern char Breaker_Addr[32];
+extern char HMI_Addr[32];
 /* Macros */
 # define MAX(a,b) (((a)>(b))?(a):(b))
 # define MIN(a,b) (((a)<(b))?(a):(b))
+
+void Load_SS_Conf(int ss_id);
 
 int serverTCPsock(int port, int qlen);
 int clientTCPsock(int port, int addr);

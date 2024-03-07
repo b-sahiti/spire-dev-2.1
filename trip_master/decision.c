@@ -348,7 +348,7 @@ void DECISION_Start_Share_Send(int type)
     }
 
     // TODO should this be local time instead?
-    DATA.cur_share = PKT_Construct_TM_Message(type, DATA.id, DATA.r.dts, sizeof(tc_share_msg));
+    DATA.cur_share = PKT_Construct_TM_Message(type, DATA.id, DATA.r.dts, sizeof(ss_tc_share_msg));
     DATA.cur_dts = 0;
 
 

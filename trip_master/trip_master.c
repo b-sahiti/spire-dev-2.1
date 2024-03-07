@@ -72,6 +72,8 @@
 
 
 int myId = 0;
+int mySSId = 0;
+
 
 /* Local functions */
 static void Usage(int, char **);
@@ -86,15 +88,16 @@ int main(int argc, char** argv)
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     //Alarm_set_types(NULL);
-    Alarm_set_types(PRINT);
+    //Alarm_set_types(PRINT);
     //Alarm_set_types(STATUS);
     //Alarm_set_types(DEBUG);
-    //Alarm_set_types(PRINT|STATUS|DEBUG);
+    Alarm_set_types(PRINT|STATUS|DEBUG);
     Alarm_set_priority(SPLOG_INFO);
 
     /* Initialize everything */
-    Init_Server_Data(myId);
-    Init_Network(myId);
+    Load_SS_Conf(mySSId);
+    Init_Server_Data(myId,mySSId);
+    Init_Network(myId,mySSId);
     Init_Bench_Stats();
     OPENSSL_RSA_Init();
     
@@ -146,11 +149,12 @@ static void print_notice()
 
 void Usage(int argc, char **argv)
 {
-    if (argc != 2) {
-        Alarm(EXIT, "Usage: %s relayID\n", argv[0]);
+    if (argc != 3) {
+        Alarm(EXIT, "Usage: %s relayID substationID\n", argv[0]);
     }
 
     sscanf(argv[1], "%d", &myId);
+    sscanf(argv[2], "%d", &mySSId);
     if (myId < 1 || myId > NUM_REPLICAS) {
         Alarm(EXIT, "Invalid ID: %d\n", myId);
     }

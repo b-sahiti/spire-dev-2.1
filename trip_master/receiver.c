@@ -146,8 +146,8 @@ void TM_Spines_Recv(int s, int source, void *dummy)
 
     /* Check claimed sender is consistent with spines addrs (spines does signing) */
     if (mess->m_id < 1 || mess->m_id > NUM_REPLICAS) return;
-    if (source == SP_EXT_SOURCE && from_addr.sin_addr.s_addr != inet_addr(SPINES_PROXY_ADDR)) {
-        Alarm(PRINT, "Source (External Spines) does not match expected address %s (proxy)", SPINES_PROXY_ADDR );
+    if (source == SP_EXT_SOURCE && from_addr.sin_addr.s_addr != inet_addr(Breaker_Addr)) {
+        Alarm(PRINT, "Source (External Spines) does not match expected address %s (proxy)", Breaker_Addr );
         return;
     }
     if (source == SP_INT_SOURCE && from_addr.sin_addr.s_addr != inet_addr(Relay_Int_Addrs[mess->m_id - 1])) {

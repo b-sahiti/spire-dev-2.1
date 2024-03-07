@@ -78,6 +78,8 @@
 #define BRKR_T1 500
 #define BRKR_T0 20000
 
+int My_ID;
+
 
 static uint64_t dts; //store last final's dts
 static int      b_state; //store breaker state
@@ -232,16 +234,18 @@ static void goose_listener(GooseSubscriber subscriber, void* parameter)
 
 
 static void Init_Spines(){
-    char *  sp_addr = SPINES_PROXY_ADDR;
+    char *  sp_addr = Breaker_Addr;
+    int ss_spines_ext_port=SS_SPINES_EXT_BASE_PORT+((My_ID-16)*10);
+
  /* Initialize Spines network */
-    s = Spines_Sock(sp_addr, SS_SPINES_EXT_PORT, SPINES_PRIORITY, TM_PROXY_PORT);
+    s = Spines_Sock(sp_addr, ss_spines_ext_port, SPINES_PRIORITY, TM_PROXY_PORT);
 
     if (s < 0) {
         Alarm(EXIT,"Spines socket error\n");
     }
     Alarm(PRINT,"Spines socket connected s=%d\n",s); 
     
-    s1 = Spines_Sock(sp_addr, SS_SPINES_EXT_PORT, SPINES_PRIORITY, BREAKER_PORT);
+    s1 = Spines_Sock(sp_addr, ss_spines_ext_port, SPINES_PRIORITY, BREAKER_PORT);
 
     if (s1 < 0) {
         Alarm(EXIT,"Spines breaker socket error\n");
@@ -260,11 +264,12 @@ int main(int argc, char** argv)
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     Alarm_set_types(PRINT);
-    //Alarm_set_types(STATUS);
-    //Alarm_set_types(DEBUG);
+    Alarm_set_types(STATUS);
+    Alarm_set_types(DEBUG);
     usage(argc, argv);
     print_notice();
-    
+    Load_SS_Conf(My_ID);
+
     /* Initialize crypto stuff */
     TC_Read_Public_Key("../trip_master/tm_keys"); 
     OPENSSL_RSA_Init();
@@ -304,9 +309,15 @@ static void PROXY_Force_Startup()
 {
 
     //If uncommented, will start breaker in close mode	
-    publish_goose(0, 0);
+    //publish_goose(0, 0);
    // If uncommented, will start breaker in trip mode
     //publish_goose(0, 1);
+    sp_time now;
+
+    b_state = STATE_CLOSE;
+    now=E_get_time();
+    dts = ((now.sec * 1000 + now.usec / 1000) / DTS_INTERVAL) * DTS_INTERVAL;
+    PROXY_Send_Ack();
 }
 
 
@@ -396,10 +407,21 @@ static void Handle_Signed_Trip(tm_msg *mess)
 	 }
 	 //First Signed trip after trip sv, queue next close, inform XCBR and get confirm, then ack
 	 if(b_state!=STATE_TRIP){
-		publish_goose(0, 1);
-        	count+=1;
-	    	Alarm(STATUS, "[%d]:Valid %s, from %d with dts =%lu  \n",count,(mess->type == SIGNED_TRIP?"SIGNED_TRIP":"SIGNED_CLOSE"),mess->m_id,mess->dts);
-	 }
+                if(TESTING){
+            		b_state = STATE_TRIP;
+            		now=E_get_time();
+            		dts = ((now.sec * 1000 + now.usec / 1000) / DTS_INTERVAL) * DTS_INTERVAL;
+            		PROXY_Send_Ack();
+        	}else{
+         		publish_goose(0, 1);
+        	}
+                count+=1;
+                Alarm(STATUS, "[%d]:Valid %s, from %d with dts =%lu  \n",count,(mess->type == SIGNED_TRIP?"SIGNED_TRIP":"SIGNED_CLOSE"),mess->m_id,mess->dts);
+         }else{
+                now=E_get_time();
+                dts = ((now.sec * 1000 + now.usec / 1000) / DTS_INTERVAL) * DTS_INTERVAL;
+                PROXY_Send_Ack();
+        }
 
  }
 
@@ -422,22 +444,32 @@ static void Handle_Signed_Close(tm_msg *mess)
 	 
 	 //First Signed close after close sv, queue next trip sv, inform XCBR and get confirm, then ack
 	 if(b_state!=STATE_CLOSE){
-		publish_goose(0, 0);
-        	count+=1;
-
-	    	Alarm(STATUS, "[%d]:Valid %s, from %d with dts=%lu \n",count,(mess->type == SIGNED_TRIP?"SIGNED_TRIP":"SIGNED_CLOSE"),mess->m_id,mess->dts);
-	 }
+                if(TESTING){
+            		b_state = STATE_CLOSE;
+            		now=E_get_time();
+            		dts = ((now.sec * 1000 + now.usec / 1000) / DTS_INTERVAL) * DTS_INTERVAL;
+            		PROXY_Send_Ack();
+        	}else{
+            		publish_goose(0, 0);
+        	}
+            	count+=1;
+                Alarm(STATUS, "[%d]:Valid %s, from %d with dts=%lu \n",count,(mess->type == SIGNED_TRIP?"SIGNED_TRIP":"SIGNED_CLOSE"),mess->m_id,mess->dts);
+         }else{
+                now=E_get_time();
+                dts = ((now.sec * 1000 + now.usec / 1000) / DTS_INTERVAL) * DTS_INTERVAL;
+                PROXY_Send_Ack();
+        } 
 
 }
 
 
 static bool Validate_Final_Msg(tm_msg *mess)
 {
-	tc_final_msg *      tc_final;
+	ss_tc_final_msg *      tc_final;
 	tc_payload          payload;
     byte                digest[DIGEST_SIZE];
 	
-	if (mess->len != sizeof(tc_final_msg)){
+	if (mess->len != sizeof(ss_tc_final_msg)){
 		Alarm(DEBUG, "Invalid 1: mess->len is not same as tc_final_message\n");
 		return false;
 	}
@@ -450,7 +482,7 @@ static bool Validate_Final_Msg(tm_msg *mess)
 	 //Valid message i.e., Signed Trip/close with dts > what we last know
 	 Alarm(DEBUG,"Valid: message from %d (dts = %ld, cur = %ld)\n",mess->m_id,mess->dts, dts);
 	 
-	 tc_final = (tc_final_msg *)(mess + 1);
+	 tc_final = (ss_tc_final_msg *)(mess + 1);
 	 memset(&payload, 0, sizeof(payload));
 	 payload.dts = mess->dts;
 	 payload.state = mess->type == SIGNED_TRIP ? STATE_TRIP : STATE_CLOSE;
@@ -559,10 +591,12 @@ static void print_notice()
 static void usage(int argc, char **argv)
 {
     count=0;
-    if (argc!=2){
-        Alarm(EXIT,"Usage: sudo ./pnnl_simple_cb_proxy interface\n");
+    if (argc!=3){
+        Alarm(EXIT,"Usage: sudo ./pnnl_simple_cb_proxy interface SSID\n");
     }
     interface=argv[1];
+    My_ID=atoi(argv[2]);
+
     return;
 }
 

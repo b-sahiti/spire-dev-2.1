@@ -81,6 +81,7 @@ void Usage(int argc, char **argv);
 
 // Global variables
 int My_ID;
+int My_SS_ID;
 char* interface;
 static uint64_t count;
 
@@ -96,8 +97,8 @@ int main(int argc, char** argv)
   
     setlinebuf(stdout);
     Alarm_set_types(PRINT);
-    //Alarm_set_types(STATUS);
-    //Alarm_set_types(DEBUG);
+    Alarm_set_types(STATUS);
+    Alarm_set_types(DEBUG);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     Usage(argc, argv);
 
@@ -215,7 +216,10 @@ void handle_event(int s, int code, void *dummy)
 	return;
     }
 
-    
+    if(msg.ss_id!=My_SS_ID){
+        return;
+        }
+
     trip = malloc(sizeof(int));
     if (trip == NULL)
     {
@@ -286,8 +290,8 @@ void repeat_goose(int code, void *dummy)
 
 void Usage(int argc, char **argv)
 {
-    if (argc != 3) {
-        Alarm(EXIT, "Usage: %s interface relayID\n", argv[0]);
+    if (argc != 4) {
+        Alarm(EXIT, "Usage: %s interface relayID SS_ID\n", argv[0]);
     }
     
     interface = argv[1];
@@ -296,5 +300,5 @@ void Usage(int argc, char **argv)
     if (My_ID < 1 || My_ID > NUM_REPLICAS) {
         Alarm(EXIT, "Invalid My_ID: %d\n", My_ID);
     }
-
+    sscanf(argv[3], "%d", &My_SS_ID);
 }

@@ -136,8 +136,8 @@ void RECOVERY_Handle_Proxy_Msg(int s, int source, void * dummy_p)
         return;
     }
     
-    if (from_addr.sin_addr.s_addr != inet_addr(SPINES_PROXY_ADDR)) {
-        Alarm(PRINT, "Recovery: Source %s (from external spines) does not match expected address %s (proxy)", from_addr.sin_addr.s_addr,SPINES_PROXY_ADDR );
+    if (from_addr.sin_addr.s_addr != inet_addr(Breaker_Addr)) {
+        Alarm(PRINT, "Recovery: Source %s (from external spines) does not match expected address %s (proxy)", from_addr.sin_addr.s_addr,Breaker_Addr );
         return;
     }
 

@@ -54,11 +54,14 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "spu_alarm.h"
 
 #include "def.h"
 #include "packets.h"
+
+int My_SS_ID;
 
 void usage(int argc, char **argv);
 
@@ -163,6 +166,7 @@ int main(int argc, char **argv)
     		}
             gettimeofday(&now, NULL);
             payload.time_ms = now.tv_sec * 1000 + now.tv_usec / 1000;
+	    payload.ss_id=My_SS_ID;
 
             ret = sendto(s, &payload, sizeof(payload), 0, (struct sockaddr *)&send_addr, sizeof(send_addr));
 
@@ -178,8 +182,12 @@ int main(int argc, char **argv)
 }
 
 void usage(int argc, char **argv) {
-    if (argc <= 1)
-        return;
+    if (argc < 2){
+        Alarm(EXIT, "Usage: ./gen_event SS_ID\n");
+	return;
+    }
+    
+    sscanf(argv[1], "%d", &My_SS_ID);
 
     if (strcmp(argv[1], "-h") == 0) {
         printf("Commands:\n");
