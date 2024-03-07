@@ -85,5 +85,6 @@ typedef struct tc_data_d {
 void *ITRC_Client(void *data);
 void *ITRC_Prime_Inject(void *data);
 void *ITRC_Master(void *data);
+void *ITRC_CC_Connector(void *data);
 
 #endif /* ITRC_H */

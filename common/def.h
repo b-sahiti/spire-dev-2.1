@@ -95,7 +95,7 @@
 #define MAX_EMU_RTU      100
 
 /* Number of HMIs in the system */
-#define NUM_HMI          3
+#define NUM_HMI          4
 
 
 /* Reconfiguration enabling flag */
@@ -130,6 +130,12 @@
 
 /* IP address for the Spines daemon that connects with the HMI(s) */
 #define SPINES_HMI_ADDR "192.168.53.101"
+
+/*Control Center Connectors for Integrated Architecture Scenario*/
+#define NUM_CC_CONNECTORS 2
+
+#define CC_CONNECTORS {"192.168.53.102", \
+		       "192.168.53.103" }
 
 /************************
  *    Spines defines    *

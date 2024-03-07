@@ -169,7 +169,7 @@ void Read_RSA( int32u rsa_type, int32u server_number, RSA *rsa, const char *keys
     snprintf(fileName, 100, "%s/private_%02d.key", keys_dir, server_number);
   else if(rsa_type == RSA_TYPE_CLIENT_PUBLIC)
     snprintf(fileName, 100, "%s/public_client_%02d.key", keys_dir, server_number);
-  else if(rsa_type == RSA_TYPE_CLIENT_PRIVATE)
+  else if(rsa_type == RSA_TYPE_CLIENT_PRIVATE|| rsa_type == RSA_TYPE_RTU_CC)
     snprintf(fileName, 100, "%s/private_client_%02d.key", keys_dir, server_number);
   
   if((f = fopen( fileName, "r")) == NULL) {
