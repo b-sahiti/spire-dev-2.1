@@ -98,8 +98,8 @@ enum message_type {DUMMY, RTU_DATA, RTU_FEEDBACK, HMI_UPDATE, HMI_COMMAND,
  *      MODBUS
  *      DNP3
  */
-#define NUM_PROTOCOLS 2
-enum protocol{MODBUS, DNP3};
+#define NUM_PROTOCOLS 3
+enum protocol{MODBUS, DNP3, IEC61850};
 
 
 /*
@@ -128,6 +128,7 @@ enum crob_type{LATCH_ON, LATCH_OFF, PULSE_ON, PULSE_OFF};
 #define JHU 1
 #define PNNL 2
 #define EMS 3
+#define INTEGRATED_CC 4
 
 /*
  * Type of equipment inside of substations
@@ -274,6 +275,7 @@ typedef struct dummy_pub_key_header {
 #define EMS_DATA_PADDING 44
 #define EMS_TARGET_SET 0 // Message type for the RTU Feedback Msg
 #define EMS_RTU_ID_BASE 11
+#define SUBSTATION_RTU_ID_BASE 17
 
 /* JHU-specific RTU Data struct */
 typedef struct jhu_fields_d {
@@ -303,6 +305,15 @@ typedef struct ems_fields_d {
     int32u target_generation;
     int32u padd1[EMS_DATA_PADDING / sizeof(int32u)];
 } ems_fields;
+
+/* Integrated HMI -substation specific RTU Data struct */
+typedef struct substation_fields_d {
+    int32u ss_id;
+    int32u breaker_id;
+    int32u breaker_state;
+    int32u dts;
+} substation_fields;
+
 
 /* RTU Data Message */
 //TODO: change sub_id to rtu_id

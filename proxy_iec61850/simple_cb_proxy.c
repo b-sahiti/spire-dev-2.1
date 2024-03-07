@@ -48,6 +48,7 @@
 
 #include "def.h"
 #include "ss_net_wrapper.h"
+#include "scada_packets.h"
 #include "packets.h"
 #include "ss_tc_wrapper.h"
 #include "ss_openssl_rsa.h"
@@ -78,8 +79,10 @@
 #define BRKR_T1 500
 #define BRKR_T0 20000
 
-int My_ID;
-
+int My_ID,Prime_Client_ID,Type,seq_num;
+int32u My_Incarnation;
+signed_update_message up_mess;
+int Curr_num_SM = NUM_SM;
 
 static uint64_t dts; //store last final's dts
 static int      b_state; //store breaker state
@@ -94,7 +97,7 @@ int timeout_ms;
 CommParameters gooseCommParameters;
 
 
-
+static void send_to_cc();
 static void print_notice();
 static void usage(int argc, char **argv);
 static bool Validate_Final_Msg(tm_msg *mess);
@@ -273,6 +276,7 @@ int main(int argc, char** argv)
     /* Initialize crypto stuff */
     TC_Read_Public_Key("../trip_master/tm_keys"); 
     OPENSSL_RSA_Init();
+    OPENSSL_RSA_Read_Keys(Prime_Client_ID, RSA_RTU_CC, "../prime/bin/keys");
 
     /* Breaker State is Unknown*/
     b_state=-1;
@@ -289,7 +293,12 @@ int main(int argc, char** argv)
         if(TESTING)
         {
 	   PROXY_Force_Startup();
-        }
+        }else{
+    		//If uncommented, will start breaker in close mode	
+    		publish_goose(0, 0);
+   		// If uncommented, will start breaker in trip mode
+    		//publish_goose(0, 1);
+	}
 
     
     while(b_state==-1){
@@ -308,10 +317,6 @@ int main(int argc, char** argv)
 static void PROXY_Force_Startup()
 {
 
-    //If uncommented, will start breaker in close mode	
-    //publish_goose(0, 0);
-   // If uncommented, will start breaker in trip mode
-    //publish_goose(0, 1);
     sp_time now;
 
     b_state = STATE_CLOSE;
@@ -326,6 +331,11 @@ static void PROXY_Startup()
     sleep(0.010); //sleep 100ms
     
 }
+
+
+
+
+
 
 static void Handle_Ext_Spines_Msg()
 {
@@ -553,6 +563,87 @@ static void PROXY_Send_Breaker_Ack()
     Alarm(STATUS,"Sent %s breaker ack at dts=%lu\n",b_state == STATE_CLOSE? "CLOSE":"TRIP",dts);
 }
 
+
+static void send_to_cc(){
+    signed_message *mess;
+    update_message *up;
+    signed_message *rtu_mess_header;
+    rtu_data_msg *rtu_data;
+    struct timeval now;
+    substation_fields* sf;
+    struct sockaddr_in dest;
+    int ret;
+
+    //ITRC_Client: Construct signed_update_message and fill main header
+    mess = PKT_Construct_Signed_Message(sizeof(signed_update_message) - sizeof(signed_message));
+    mess->machine_id = Prime_Client_ID;
+    mess->len = sizeof(signed_update_message) - sizeof(signed_message);
+    mess->type = UPDATE;
+    mess->incarnation = My_Incarnation;
+    //ITRC Clinet: Fill update message header
+    up = (update_message *)(mess + 1);
+    up->server_id = Prime_Client_ID;
+    up->seq_num = seq_num;
+    //Proxy:RTU_data's signed message header
+    rtu_mess_header = (signed_message *)(up+1);
+    rtu_mess_header->machine_id = Prime_Client_ID;
+    rtu_mess_header->len = sizeof(rtu_data_msg);
+    rtu_mess_header->type = RTU_DATA;
+    rtu_mess_header->incarnation = My_Incarnation;
+    //RTU Data filling
+    rtu_data=(rtu_data_msg *) (rtu_mess_header+1);
+    rtu_data->seq.seq_num = seq_num;
+    rtu_data->seq.incarnation = My_Incarnation;
+    rtu_data->rtu_id = My_ID;
+    rtu_data->scen_type = INTEGRATED_CC;
+    gettimeofday(&now, NULL);
+    rtu_data->sec  = now.tv_sec;
+    rtu_data->usec = now.tv_usec;
+    //Fill data or substaion fields for this scenario
+    sf = (substation_fields *) rtu_data->data;
+    if (b_state==STATE_CLOSE)
+        sf->breaker_state= 0;
+    else if (b_state == STATE_TRIP)
+       sf->breaker_state=1;
+    else
+       sf->breaker_state=2;
+    sf->dts = dts;
+    sf->ss_id=Prime_Client_ID;
+    OPENSSL_RSA_Sign(((byte*)mess) + SIGNATURE_SIZE,
+           sizeof(signed_message) + mess->len - SIGNATURE_SIZE,
+           (byte*)mess);
+    signed_message *test;
+    test=(signed_message *)mess;
+    Alarm(DEBUG,"Post Sign: type=%lu, id=%lu\n",test->type,test->machine_id);
+    Alarm(DEBUG,"\n");
+    Alarm(DEBUG,"\n");
+    //send to cc connector
+    dest.sin_family = AF_INET;
+    int relay_ss_port=RELAY_SUBSTATION_BASE_PORT+((My_ID-16)*10);
+    dest.sin_port = htons(relay_ss_port);
+    dest.sin_addr.s_addr = inet_addr(SPINES_RTU_ADDR);
+    ret = spines_sendto(s, mess,sizeof(signed_update_message),
+           0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+    if (ret != sizeof(signed_update_message)) {
+        Alarm(PRINT,"Error Sending to cc_connector ret=%d mess size=%d\n",ret,sizeof(*mess));
+        return;
+    }else{
+    	Alarm(PRINT,"Sent to cc_connector (%s:%d) seq_num=%d size=%d\n",SPINES_RTU_ADDR,relay_ss_port,seq_num,ret);
+    }
+    //send to ss hmi
+    dest.sin_port = htons(relay_ss_port);
+    dest.sin_addr.s_addr = inet_addr(HMI_Addr);
+    ret = spines_sendto(s, mess,sizeof(signed_update_message),
+           0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+    if (ret != sizeof(signed_update_message)) {
+        Alarm(PRINT,"Error Sending to ss HMI ret=%d mess size=%d\n",ret,sizeof(*mess));
+        return;
+    }else{
+    	Alarm(PRINT,"Sent to ss hmi seq_num=%d size=%d\n",seq_num,ret);
+    }
+    seq_num+=1;
+
+}
 
 static void print_notice()
 {

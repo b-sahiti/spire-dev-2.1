@@ -59,6 +59,7 @@
 #define SIGNATURE_SIZE     128
 #define RSA_CLIENT         1
 #define RSA_SERVER         2
+#define RSA_RTU_CC         3
 
 /* Public functions */
 void OPENSSL_RSA_Init();
