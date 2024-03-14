@@ -263,7 +263,7 @@
 /* IPC Communication defines */
 #define TM_IPC_IN  "/tmp/tm_ipc_in"
 #define TM_IPC_OUT  "/tmp/tm_ipc_out"
-
+#define CONNECTOR_IPC_OUT  "/tmp/connector_ipc_out"
 
 /* Threshhold Crypto defines */
 #define TM_KEYS "tm_keys"

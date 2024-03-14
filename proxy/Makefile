@@ -47,11 +47,13 @@
 
 CC=gcc
 CFLAGS+= -Wall -W -g
-TARGET=proxy cc_connector
+TARGET=proxy cc_connector ied_connector
 LIBS=-lpthread ../prime/OpenTC-1.1/TC-lib-1.0/.libs/libTC.a \
            ../spines/libspines/libspines.a ../prime/stdutil/lib/libstdutil.a \
+	   ../spines/libspread-util/src/libspread-util.a \
+           ../libiec61850/.install/lib/libiec61850.a \
 		   -lrt -ldl -lcrypto -lpthread -lm
-INC= -I ../prime/stdutil/include -I ../spines/libspines/
+INC= -I ../prime/stdutil/include -I ../spines/libspines/ -I ../spines/libspread-util/include/ -I ../libiec61850/.install/include/
 OBJECTS=proxy.o \
 		../common/scada_packets.o \
 		../common/net_wrapper.o \
@@ -73,7 +75,18 @@ CC_OBJECTS=cc_connector.o \
                 ../config/config_helpers.o
 
 
-all: proxy cc_connector 
+IED_OBJECTS=ied_connector.o \
+                ../common/scada_packets.o \
+                ../common/net_wrapper.o \
+                ../common/openssl_rsa.o \
+                ../common/tc_wrapper.o \
+                ../common/itrc.o \
+                ../common/key_value.o \
+                ../config/cJSON.o \
+                ../config/config_helpers.o
+
+
+all: proxy cc_connector ied_connector 
 
 
 proxy: $(OBJECTS)
@@ -83,9 +96,13 @@ cc_connector: $(CC_OBJECTS)
 	$(CC) $(LDFLAGS) -o cc_connector $(CC_OBJECTS) $(LIBS)
 
 
+ied_connector: $(IED_OBJECTS)
+	$(CC) $(LDFLAGS) -o ied_connector $(IED_OBJECTS) $(LIBS)
+
 clean:
 	rm -f $(OBJECTS)
 	rm -f $(CC_OBJECTS)
+	rm -f $(IED_OBJECTS)
 	rm -f $(TARGET)
 
 proxy.o: proxy.c ../common/scada_packets.h \
@@ -100,6 +117,13 @@ cc_connector.o: cc_connector.c ../common/scada_packets.h \
                                 ../common/tc_wrapper.h ../common/itrc.h \
                                 ../common/key_value.h ../config/cJSON.h ../config/config_helpers.h
 	$(CC) -c $(CFLAGS) $(INC) -o cc_connector.o cc_connector.c
+
+ied_connector.o: ied_connector.c ../common/scada_packets.h \
+                                ../common/net_wrapper.h ../common/openssl_rsa.h \
+                                ../common/tc_wrapper.h ../common/itrc.h \
+                                ../common/key_value.h ../config/cJSON.h ../config/config_helpers.h
+	$(CC) -c $(CFLAGS) $(INC) -o ied_connector.o ied_connector.c
+
 
 %.o:	%.c
 		$(CC) $(CFLAGS) $(INC) -c -o $*.o $*.c
