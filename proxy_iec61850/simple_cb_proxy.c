@@ -694,7 +694,7 @@ static void usage(int argc, char **argv)
     My_ID=atoi(argv[2]);
 
     Type = RTU_TYPE;
-    Prime_Client_ID = (NUM_SM +1) + My_ID;
+    Prime_Client_ID = MAX_NUM_SERVER_SLOTS + My_ID;
     seq_num = 1;
     gettimeofday(&now, NULL);
     My_Incarnation = now.tv_sec;

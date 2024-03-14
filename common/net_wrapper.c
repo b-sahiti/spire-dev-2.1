@@ -556,6 +556,10 @@ int Spines_SendOnly_Sock(const char *sp_addr, int sp_port, int proto)
         exp.sec  = EXT_EXPIRATION_SEC;
         exp.usec = EXT_EXPIRATION_USEC;
     }
+    else if (sp_port > SS_SPINES_EXT_BASE_PORT || sp_port<SS_SPINES_EXT_BASE_PORT+(NUM_RTU*10) ) {
+        exp.sec  = EXT_EXPIRATION_SEC;
+        exp.usec = EXT_EXPIRATION_USEC;
+    }
     else {
         printf("Invalid spines port specified! (%u)\n", sp_port);
         exit(EXIT_FAILURE);
