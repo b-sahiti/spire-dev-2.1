@@ -85,6 +85,7 @@ cc_connector: $(CC_OBJECTS)
 
 clean:
 	rm -f $(OBJECTS)
+	rm -f $(CC_OBJECTS)
 	rm -f $(TARGET)
 
 proxy.o: proxy.c ../common/scada_packets.h \

@@ -140,7 +140,7 @@
 #define CONF_SPINES_MCAST_ADDR "224.1.1.3"
 #define CONF_SPINES_MCAST_PORT 9900
 /*IP Address of Configuration Manager- Please edit to match testbed*/
-#define CONF_MNGR_ADDR "192.168.53.73"
+#define CONF_MNGR_ADDR "192.168.53.101"
 /*Ports of Spines Configuration Network used by Configuration Manager and Agents*/
 #define CONFIGUATION_SPINES_PORT       8900
 #define CTRL_BASE_PORT      9580
