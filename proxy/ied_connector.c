@@ -96,7 +96,8 @@ int main(int argc, char *argv[])
     My_IP=getIP();
     My_ID=atoi(argv[2]);
     My_SS_Id=atoi(argv[4]);
-    Prime_Client_ID = (NUM_SM + 1) + My_ID;
+    //Prime_Client_ID = (NUM_SM + 1) + My_ID;
+    Prime_Client_ID = MAX_NUM_SERVER_SLOTS + My_ID;
 
     OPENSSL_RSA_Init();
     OPENSSL_RSA_Read_Keys(Prime_Client_ID, RSA_CLIENT, PROXY_PRIME_KEYS);
@@ -146,7 +147,7 @@ void Handle_CC_Message(){
     tcf          = (signed_message *)buff;
     printf("Received CC message of size=%d from %d\n",ret,tcf->machine_id);
     /* VERIFY RSA Signature over whole message */
-    if (tcf->machine_id== (NUM_SM + MAX_EMU_RTU + INTEGRATED_SS)){//SS_HMI verification
+    if (tcf->machine_id== (MAX_NUM_SERVER_SLOTS + MAX_EMU_RTU + INTEGRATED_SS)){//SS_HMI verification
         ret = OPENSSL_RSA_Verify((unsigned char*)tcf + SIGNATURE_SIZE,
                             sizeof(signed_message) + tcf->len - SIGNATURE_SIZE,
                             (unsigned char *)tcf, tcf->machine_id, RSA_CLIENT);
@@ -163,7 +164,7 @@ void Handle_CC_Message(){
     }else{
         printf("RSA_Verify passed for HMI message from %d\n", tcf->machine_id);
         }
-    if(tcf->machine_id>0 && tcf->machine_id <= NUM_SM ){ 
+    if(tcf->machine_id>0 && tcf->machine_id <  MAX_NUM_SERVER_SLOTS ){ 
         tcf_specific = (tc_final_msg *)(tcf + 1);
         scada_mess=(signed_message *)(tcf_specific->payload);
         rtuf = (rtu_feedback_msg *)(scada_mess + 1);
@@ -186,7 +187,7 @@ void Handle_CC_Message(){
         //Fill message for proxy 
         cmsg.asset_id=rtuf->offset;
         cmsg.asset_cmd_value=rtuf->val;
-    }else if (tcf->machine_id== (NUM_SM + MAX_EMU_RTU + INTEGRATED_SS)){
+    }else if (tcf->machine_id== ( MAX_NUM_SERVER_SLOTS+ MAX_EMU_RTU + INTEGRATED_SS)){
         up = (update_message *)(tcf+1);
         hmi_header=(signed_message *)(up+1);
         hmi_msg=(hmi_command_msg *)(hmi_header+1);
