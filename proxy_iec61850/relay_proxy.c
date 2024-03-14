@@ -72,6 +72,7 @@
 #include "def.h"
 #include "packets.h"
 #include "ss_net_wrapper.h"
+#include "connector_packets.h"
 
 #define T1 500
 #define T0 2000
@@ -89,25 +90,28 @@ static GooseReceiver goose_receiver;
 static GooseSubscriber goose_subscriber;
 static local_relay_msg mess;
 /* Defs for forwarding over Spines/IPC */
-static int ipc_sock,ipc_sock_in;
+static int ipc_sock,ipc_sock_in,connector_ipc_in;
 static struct sockaddr_un ipc_addr;
 /* iec61850 objects to publish CB status GOOSE messages */
 //static char* interface;
-GoosePublisher publisher;
-LinkedList dataSetValues;
-MmsValue *mms_trip;
+GoosePublisher publisher,cc_publisher;
+LinkedList dataSetValues,CCDataSetValues;
+MmsValue *mms_trip,*cc_mms_trip;
 int timeout_ms,location;
-CommParameters gooseCommParameters;
+CommParameters gooseCommParameters,cc_gooseCommParameters;
 
 int first_r, first_b;
 
 /*Local Functions*/
 static void Init_ipc();
 static void Init_goosepub();
+static void Init_cc_goosepub();
 static void Usage(int, char **);
 static void goose_listener(GooseSubscriber subscriber, void* parameter);
 static void TM_IPC_Recv(int source, void *dummy);
+static void CONNECTOR_IPC_Recv(int source, void *dummy);
 static void publish_goose(int code, int v_trip);
+static void publish_cc_goose(int code, int v_trip);
 static void repeat_goose(int code, void *dummy);
 static void print_notice();
 
@@ -140,7 +144,18 @@ int main(int argc, char** argv)
     //GoosePublisher_setDataSetRef(publisher, "Dataset1");
     GoosePublisher_setDataSetRef(publisher, argv[6]);
     GoosePublisher_setGoID(publisher,argv[5]);
-    
+   
+    //Create publisher for CC commands
+    cc_publisher = GoosePublisher_create(&cc_gooseCommParameters, argv[4]);
+    if (!cc_publisher) {
+        Alarm(EXIT, "Failed to create CC GOOSE publisher. Reason can be that the Ethernet interface doesn't exist or root permission are required.\n");
+        GoosePublisher_destroy(cc_publisher);
+    }
+    GoosePublisher_setGoCbRef(cc_publisher, "SPIRE/CC/GOOSE");
+    GoosePublisher_setConfRev(cc_publisher, 1);
+    GoosePublisher_setDataSetRef(cc_publisher, "SPIRE/CC/GOOSE$Dataset1");
+    GoosePublisher_setGoID(publisher,"Dataset1");
+
     //Goose Subscriber
     goose_receiver= GooseReceiver_create();
     GooseReceiver_setInterfaceId(goose_receiver, argv[3]);
@@ -165,6 +180,7 @@ int main(int argc, char** argv)
     }
     E_init();
     E_attach_fd(ipc_sock_in, READ_FD, TM_IPC_Recv, NULL, NULL, MEDIUM_PRIORITY);
+    E_attach_fd(connector_ipc_in, READ_FD, CONNECTOR_IPC_Recv, NULL, NULL, MEDIUM_PRIORITY);
     E_handle_events();
 
     //GooseReceiver_stop(goose_receiver);
@@ -172,6 +188,35 @@ int main(int argc, char** argv)
     //GoosePublisher_destroy(publisher);
 
 
+}
+
+void CONNECTOR_IPC_Recv(int source, void *dummy)
+{
+    hmi_cmd cmd_msg;
+    int ret;
+    int  trip=2;
+
+    ret = IPC_Recv(connector_ipc_in, &cmd_msg, sizeof(cmd_msg));
+    if(cmd_msg.type == IED_CC_CMD){
+        Alarm(PRINT,"\t&&&&&&&&Received CC CMD message asset=%u, value=%u\n",cmd_msg.asset_id,cmd_msg.asset_cmd_value);
+
+    }
+    else if(cmd_msg.type == IED_SS_CMD){
+        Alarm(PRINT,"\t&&&&&&&&Received CC CMD message asset=%u, value=%u\n",cmd_msg.asset_id,cmd_msg.asset_cmd_value);
+    }
+    else{
+        Alarm(PRINT,"CONNECTOR_IPC_Recv Unknown type=%d\n",cmd_msg.type);
+        return;
+    }
+    if(cmd_msg.asset_cmd_value==1){
+            Alarm(STATUS, "Issued TRIP CC CMD\n");
+            trip=1;
+        }
+        else{
+            Alarm(STATUS, "Issued CLOSE CC CMD\n");
+            trip=0;
+        }
+   publish_cc_goose(0, trip);
 }
 
 
@@ -196,6 +241,25 @@ void TM_IPC_Recv(int source, void *dummy)
     publish_goose(0, trip);
 
 }
+
+
+/* Publish a new goose event, i.e. increase state number and change state */
+void publish_cc_goose(int code, int v_trip)
+{
+    int trip = v_trip;
+
+
+    Alarm(PRINT, "\t********Publisher: New CC Command %s!\n",trip ==1? "TRIP":"CLOSE");
+
+    GoosePublisher_increaseStNum(cc_publisher);
+    MmsValue_setBoolean(cc_mms_trip, trip);
+    GoosePublisher_setTimeAllowedToLive(cc_publisher, timeout_ms);
+    if (GoosePublisher_publish(cc_publisher, CCDataSetValues) == -1) {
+        Alarm(PRINT, "Publisher: Error sending cc message!\n");
+    }
+    Alarm(PRINT, "Publisher: Sent cc message!\n");
+}
+
 
 /* Publish a new goose event, i.e. increase state number and change state */
 void publish_goose(int code, int v_trip)
@@ -257,11 +321,32 @@ static void Init_ipc()
     ipc_sock_in=IPC_DGram_Sock(TM_IPC_OUT);
     if(ipc_sock_in<0)
         Alarm(EXIT, "Error setting up IPC relay input communication, exiting\n");
+    
+    connector_ipc_in=IPC_DGram_Sock(CONNECTOR_IPC_OUT);
+    if(connector_ipc_in<0)
+        Alarm(EXIT, "Error setting up IPC connector to relay input communication, exiting\n");
 
     Alarm(DEBUG,"Set up IPC send and receive sockets\n");
 }
 
+static void Init_cc_goosepub()
+{
+    /* Setup payload data structure */
+    CCDataSetValues = LinkedList_create();
+    cc_mms_trip = MmsValue_newBoolean(0);
+    LinkedList_add(CCDataSetValues, cc_mms_trip);
 
+    //TODO: Set appId per relay proxy
+    cc_gooseCommParameters.appId = 1000;
+    cc_gooseCommParameters.dstAddress[0] = 0x01;
+    cc_gooseCommParameters.dstAddress[1] = 0x02;
+    cc_gooseCommParameters.dstAddress[2] = 0x03;
+    cc_gooseCommParameters.dstAddress[3] = 0x04;
+    cc_gooseCommParameters.dstAddress[4] = 0x05;
+    cc_gooseCommParameters.dstAddress[5] = 0x06;
+    cc_gooseCommParameters.vlanId = 0;
+    cc_gooseCommParameters.vlanPriority = 4;
+}
 
 static void Init_goosepub()
 {
