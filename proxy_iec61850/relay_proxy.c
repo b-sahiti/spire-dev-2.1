@@ -34,7 +34,7 @@
  * Contributors:
  *   Samuel Beckley       Contributions to HMIs
  *
- * Copyright (c) 2017-2024 Johns Hopkins University.
+ * Copyright (c) 2017-2023 Johns Hopkins University.
  * All rights reserved.
  *
  * Partial funding for Spire research was provided by the Defense Advanced
@@ -71,8 +71,8 @@
 
 #include "def.h"
 #include "packets.h"
-#include "ss_net_wrapper.h"
 #include "connector_packets.h"
+#include "ss_net_wrapper.h"
 
 #define T1 500
 #define T0 2000
@@ -98,7 +98,7 @@ GoosePublisher publisher,cc_publisher;
 LinkedList dataSetValues,CCDataSetValues;
 MmsValue *mms_trip,*cc_mms_trip;
 int timeout_ms,location;
-CommParameters gooseCommParameters,cc_gooseCommParameters;
+CommParameters gooseCommParameters, cc_gooseCommParameters;
 
 int first_r, first_b;
 
@@ -108,10 +108,10 @@ static void Init_goosepub();
 static void Init_cc_goosepub();
 static void Usage(int, char **);
 static void goose_listener(GooseSubscriber subscriber, void* parameter);
-static void TM_IPC_Recv(int source, void *dummy);
 static void CONNECTOR_IPC_Recv(int source, void *dummy);
-static void publish_goose(int code, int v_trip);
+static void TM_IPC_Recv(int source, void *dummy);
 static void publish_cc_goose(int code, int v_trip);
+static void publish_goose(int code, int v_trip);
 static void repeat_goose(int code, void *dummy);
 static void print_notice();
 
@@ -120,8 +120,8 @@ int main(int argc, char** argv)
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     setlinebuf(stdout);
     Alarm_set_types(PRINT);
-    //Alarm_set_types(STATUS);
-    //Alarm_set_types(DEBUG);
+    Alarm_set_types(STATUS);
+    Alarm_set_types(DEBUG);
     
     Usage(argc, argv);
     first_r=1;
@@ -130,6 +130,7 @@ int main(int argc, char** argv)
     Init_ipc();
     
     Init_goosepub();
+    Init_cc_goosepub();
     
     //Create Publisher with interface and  CB REF from cmd line args
     
@@ -144,7 +145,7 @@ int main(int argc, char** argv)
     //GoosePublisher_setDataSetRef(publisher, "Dataset1");
     GoosePublisher_setDataSetRef(publisher, argv[6]);
     GoosePublisher_setGoID(publisher,argv[5]);
-   
+
     //Create publisher for CC commands
     cc_publisher = GoosePublisher_create(&cc_gooseCommParameters, argv[4]);
     if (!cc_publisher) {
@@ -155,6 +156,7 @@ int main(int argc, char** argv)
     GoosePublisher_setConfRev(cc_publisher, 1);
     GoosePublisher_setDataSetRef(cc_publisher, "SPIRE/CC/GOOSE$Dataset1");
     GoosePublisher_setGoID(publisher,"Dataset1");
+
 
     //Goose Subscriber
     goose_receiver= GooseReceiver_create();
@@ -189,7 +191,6 @@ int main(int argc, char** argv)
 
 
 }
-
 void CONNECTOR_IPC_Recv(int source, void *dummy)
 {
     hmi_cmd cmd_msg;
@@ -199,7 +200,7 @@ void CONNECTOR_IPC_Recv(int source, void *dummy)
     ret = IPC_Recv(connector_ipc_in, &cmd_msg, sizeof(cmd_msg));
     if(cmd_msg.type == IED_CC_CMD){
         Alarm(PRINT,"\t&&&&&&&&Received CC CMD message asset=%u, value=%u\n",cmd_msg.asset_id,cmd_msg.asset_cmd_value);
-
+        
     }
     else if(cmd_msg.type == IED_SS_CMD){
         Alarm(PRINT,"\t&&&&&&&&Received CC CMD message asset=%u, value=%u\n",cmd_msg.asset_id,cmd_msg.asset_cmd_value);
@@ -219,7 +220,6 @@ void CONNECTOR_IPC_Recv(int source, void *dummy)
    publish_cc_goose(0, trip);
 }
 
-
 void TM_IPC_Recv(int source, void *dummy)
 {
     local_relay_msg tm_cb_status;
@@ -235,13 +235,12 @@ void TM_IPC_Recv(int source, void *dummy)
         trip=0;
     }
     else{
-        Alarm(DEBUG,"TM_IPC_Recv Unknown type=%d\n",tm_cb_status.type);
+        Alarm(PRINT,"TM_IPC_Recv Unknown type=%d\n",tm_cb_status.type);
         return;
     }
     publish_goose(0, trip);
 
 }
-
 
 /* Publish a new goose event, i.e. increase state number and change state */
 void publish_cc_goose(int code, int v_trip)
@@ -259,7 +258,6 @@ void publish_cc_goose(int code, int v_trip)
     }
     Alarm(PRINT, "Publisher: Sent cc message!\n");
 }
-
 
 /* Publish a new goose event, i.e. increase state number and change state */
 void publish_goose(int code, int v_trip)
@@ -321,7 +319,7 @@ static void Init_ipc()
     ipc_sock_in=IPC_DGram_Sock(TM_IPC_OUT);
     if(ipc_sock_in<0)
         Alarm(EXIT, "Error setting up IPC relay input communication, exiting\n");
-    
+
     connector_ipc_in=IPC_DGram_Sock(CONNECTOR_IPC_OUT);
     if(connector_ipc_in<0)
         Alarm(EXIT, "Error setting up IPC connector to relay input communication, exiting\n");
@@ -438,8 +436,8 @@ static void goose_listener(GooseSubscriber subscriber, void* parameter)
 static void print_notice()
 {
   Alarm( PRINT, "/==================================================================================\\\n");
-  Alarm( PRINT, "| Spire 2.1                                                                         |\n");
-  Alarm( PRINT, "| Copyright (c) 2017-2024 Johns Hopkins University                                  |\n");
+  Alarm( PRINT, "| Spire 2.1 Beta                                                                    |\n");
+  Alarm( PRINT, "| Copyright (c) 2017-2023 Johns Hopkins University                                  |\n");
   Alarm( PRINT, "| All rights reserved.                                                              |\n");
   Alarm( PRINT, "|                                                                                   |\n");
   Alarm( PRINT, "| Spire is licensed under the Spire Open-Source License.                            |\n");
@@ -460,7 +458,7 @@ static void print_notice()
   Alarm( PRINT, "| WWW:     www.dsn.jhu/spire   www.dsn.jhu.edu                                      |\n");
   Alarm( PRINT, "| Contact: spire@dsn.jhu.edu                                                        |\n");
   Alarm( PRINT, "|                                                                                   |\n");
-  Alarm( PRINT, "| Version 2.1, Built Feb 29, 2024                                                   |\n");
+  Alarm( PRINT, "| Version 2.1 Bets, Built Nov 8, 2023                                             |\n");
   Alarm( PRINT, "|                                                                                   |\n");
   Alarm( PRINT, "| This product uses software developed by Spread Concepts LLC for use               |\n");
   Alarm( PRINT, "| in the Spread toolkit. For more information about Spread,                         |\n");
