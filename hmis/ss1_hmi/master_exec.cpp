@@ -140,6 +140,7 @@ void Process_Message(signed_message *mess)
     		printf("Received SUBSTATION HMI UPDATE MESSAGE state=%lu, ts= %lu\n",sf->breaker_state,sf->dts);
     		gettimeofday(&now, NULL);
     		printf("********CB TRIP Ack received at %u sec %u usec\n",now.tv_sec,now.tv_usec);
+		Append_History("CB Status - Opened");
 	}
         d->br_read_arr[0].value = 1;
         d->br_read_arr[1].value = 0;
@@ -153,6 +154,7 @@ void Process_Message(signed_message *mess)
     		printf("Received SUBSTATION HMI UPDATE MESSAGE state=%lu, ts= %lu\n",sf->breaker_state,sf->dts);
     		gettimeofday(&now, NULL);
     		printf("********CB CLOSE Ack received at %u sec %u usec\n",now.tv_sec,now.tv_usec);
+		Append_History("CB Status - Closed");
 	}
         d->br_read_arr[0].value = 0;
         d->br_read_arr[1].value = 1;
@@ -186,6 +188,30 @@ void Button_Event(int dummy1, void *dummy2)
 
 void Append_History(const char *m, ...)
 {
+
+  va_list ap;
+
+    struct tm *tm_info;
+    struct timeval tv;
+    int time_len;
+    char buff[100];
+
+    gettimeofday(&tv,NULL);
+    tm_info=localtime(&tv.tv_sec);
+    time_len=0;
+    time_len+=(int) strftime(buff,sizeof(buff),"%H:%M:%S",tm_info);
+    time_len+=snprintf(buff+time_len,sizeof(buff-time_len),".%03ld : ",tv.tv_usec/1000);
+
+    va_start(ap, m);
+    vsnprintf(buff + time_len, sizeof(buff) - time_len, m, ap);
+    va_end(ap);
+
+    //stdcarr_push_back(&Script_History, time_str);
+    stdcarr_push_back(&Script_History, buff);
+    Script_History_Seq++;
+
+    if (stdcarr_size(&Script_History) > 25)
+        stdcarr_pop_front_n(&Script_History, stdcarr_size(&Script_History) - 25);
 }
 
 

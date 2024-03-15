@@ -87,17 +87,29 @@ void modelInit()
   if (pipe(Script_Pipe) != 0)
     printf("Pipe failure on Script_Pipe\n"), exit(EXIT_FAILURE);
 
-  for (int i = 0; i < NUM_POINT; i++) {
+  for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
   	d->point_arr[i].id=-1;
+	d->load_dial_arr[i].id=-1;
   }
     d->point_arr[0].id = box_1;
     d->point_arr[1].id = box_2;
     d->point_arr[2].id = box_3;
-  for (int i = 0; i < NUM_POINT; i++) {
+    d->point_arr[3].id = box_4;
+    d->point_arr[4].id = box_5;
+    d->point_arr[5].id = box_6;
+    d->point_arr[6].id = box_7;
+    d->point_arr[7].id = box_8;
+    d->point_arr[8].id = box_9;
+  d->load_dial_arr[0].type=DIAL; 
+  d->load_dial_arr[0].id=dial_l3;
+  for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
     if (d->point_arr[i].id == -1)
         continue;
     d->point_arr[i].value = -1;
+    d->load_dial_arr[i].value=0;
    }
+  
+
   ret = ioctl(Script_Pipe[0], FIONBIO, (ioctl_cmd = 1, &ioctl_cmd));
   if (ret == -1)
     printf("Non-blocking failure on Script_Pipe[0]\n"), exit(EXIT_FAILURE);
@@ -132,7 +144,19 @@ static int slotInit(PARAM *p, DATA *dptr)
   dptr->button_press_time.tv_usec = 0;
   dptr->print_seq = 0;
 
-  for (int i = 0; i < NUM_POINT; i++) {
+  for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
+    if (d->load_dial_arr[i].id == -1)
+        continue;
+
+    qwtDialSetRange(p,d->load_dial_arr[i].id,0,100.0);
+    qwtDialSetNeedle(p,d->load_dial_arr[i].id,QwtDialArrowNeedle,255,0,0,255,0,0,0,0,0);
+    qwtDialShowBackground(p,d->load_dial_arr[i].id,0);
+    qwtDialSetFrameShadow(p,d->load_dial_arr[i].id,DialPlain);
+    qwtDialSetValue(p,d->load_dial_arr[i].id,d->load_dial_arr[i].value);
+  }
+
+
+  for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
     if (d->point_arr[i].id == -1)
         continue;
     printf("Slot Init i=%d, value=%d\n ",i,d->point_arr[i].value);
@@ -147,6 +171,15 @@ static int slotInit(PARAM *p, DATA *dptr)
 	pvSetPaletteBackgroundColor(p,d->point_arr[i].id,255,0,0); //Red
 	}
    }
+
+  pvSetValue(p,alert_window,25);
+  pvSetEditable(p,alert_window,0);
+
+   /* Initialize this broswer's button press timer */
+  dptr->button_press_time.tv_sec  = 0;
+  dptr->button_press_time.tv_usec = 0;
+  dptr->print_seq = 0;
+
   pvDownloadFile(p, "87t.png");
     return 0;
 }
@@ -159,7 +192,7 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
   if(p == NULL || dptr == NULL) return -1;
 
   d = dptr->dm;
-  for (int i = 0; i < NUM_POINT; i++) {
+  for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
     if (d->point_arr[i].id == -1)
         continue;
     printf("Slot Null Event i=%d, value=%d\n ",i,d->point_arr[i].value);
@@ -174,46 +207,36 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
 	pvSetPaletteBackgroundColor(p,d->point_arr[i].id,255,0,0); //Red
 	}
    }
+
+  for(int i=0; i<SUBSTATION_NUM_POINT;i++){
+        if(d->load_dial_arr[i].id==-1)
+                continue;
+        printf("Load dial i=%d value=%d\n",i, d->load_dial_arr[i].value);
+        qwtDialSetValue(p,d->load_dial_arr[i].id,d->load_dial_arr[i].value);
+  }
+
+    /* Update the Script Command History */
+  if (dptr->print_seq < Script_History_Seq) {
+      pvClear(p,alert_window);
+      for (stdcarr_begin(&Script_History, &it); !stdcarr_is_end(&Script_History, &it);
+            stdcarr_it_next(&it))
+      {
+        pvPrintf(p,alert_window,(char *)stdcarr_it_val(&it));
+      }
+      dptr->print_seq = Script_History_Seq;
+  }
+
   return 0;
 }
 
 static int slotButtonEvent(PARAM *p, int id, DATA *dptr)
 {
   if(p == NULL || id == 0 || dptr == NULL) return -1;
-/*
-  switch(id) {
-    case script_restart:
-        Script_Button_Pushed = RESTART_SCRIPT;
-        Append_History("Restarting Script (User Locked Out)");
-        break;
-    case script_pause:
-        if (Script_Running == 0)
-            return 0;
-        Script_Button_Pushed = PAUSE_SCRIPT;
-        Append_History("Pausing Script (Ready For User)");
-        break;
-    case script_continue:
-        if (Script_Running == 1)
-            return 0;
-        Script_Button_Pushed = CONTINUE_SCRIPT;
-        Append_History("Continuing Script (User Locked Out)");
-        break;
-    default:
-        return 0;
-  }
-
-  if (write(Script_Pipe[1], &id, 1) != 1)
-    printf("write failure in slotButtonEvent\n"), exit(EXIT_FAILURE);
-*/
   return 0;
 }
 
 static int slotButtonPressedEvent(PARAM *p, int id, DATA *dptr)
 {
-  signed_message *mess; 
-  seq_pair ps;
-  int nbytes;
-  data_model *d;
 
   if(p == NULL || id == 0 || dptr == NULL) return -1;
  
@@ -230,10 +253,7 @@ static int slotButtonReleasedEvent(PARAM *p, int id, DATA *dptr)
 
   if(p == NULL || id == 0 || dptr == NULL) return -1;
 
-  if (Script_Running) {
-    printf("Script Running - User Locked Out\n");
-    return 0;
-  }
+  
 
   d = dptr->dm;
 
@@ -254,6 +274,11 @@ static int slotButtonReleasedEvent(PARAM *p, int id, DATA *dptr)
       gettimeofday(&now, NULL);
       printf("********HMI Command issued at %u sec %u usec\n",now.tv_sec,now.tv_usec);
       free(mess);
+      if(id==3){
+      	Append_History("Open SS CMD Issued");
+      }else if(id==4){
+      	Append_History("Close SS CMD Issued");
+      }else{return 0;}
       return 0;
 }
 

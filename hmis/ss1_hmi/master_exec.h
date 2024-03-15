@@ -111,7 +111,7 @@ typedef struct breaker_info_d {
 
 typedef struct data_model_d // (todo: define your data structure here)
 {
-    point_info   point_arr[NUM_POINT];
+    point_info   point_arr[SUBSTATION_NUM_POINT];
     breaker_info br_read_arr[NUM_BREAKER];
     breaker_info br_write_arr[NUM_BREAKER];
 }

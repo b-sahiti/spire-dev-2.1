@@ -79,6 +79,10 @@
 #define EMS_NUM_GENERATORS 6
 #define EMS_NUM_POWERPLANTS 2
 
+
+/* Integrated SUBSTATION scenario definitions */
+#define SUBSTATION_NUM_POINT 10
+
 /*
  * Message types:
  *   DUMMY = dummy

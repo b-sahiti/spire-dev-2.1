@@ -66,6 +66,20 @@ enum {
   box_2,
   box_3,
   box_4,
+  box_5,
+  box_6,
+  box_7,
+  box_8,
+  box_9,
+  box_10,
+  label_g1,
+  label_g2,
+  dial_l1,
+  dial_l2,
+  alert_window,
+  label_alert,
+  label_87r1,
+  label_87r2,
   ID_END_OF_WIDGETS
 };
 
@@ -83,10 +97,32 @@ enum {
   "box_2",
   "box_3",
   "box_4",
+  "box_5",
+  "box_6",
+  "box_7",
+  "box_8",
+  "box_9",
+  "box_10",
+  "label_g1",
+  "label_g2",
+  "dial_l1",
+  "dial_l2",
+  "alert_window",
+  "label_alert",
+  "label_87r1",
+  "label_87r2",
   "ID_END_OF_WIDGETS",
   ""};
 
   static const char *toolTip[] = {
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
   "",
   "",
   "",
@@ -101,6 +137,20 @@ enum {
   "SS2_HMI.png",
   "red_on.png",
   "green_on.png",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
   "",
   "",
   "",
@@ -122,6 +172,20 @@ enum {
   TQFrame,
   TQFrame,
   TQFrame,
+  TQFrame,
+  TQFrame,
+  TQFrame,
+  TQFrame,
+  TQFrame,
+  TQFrame,
+  TQLabel,
+  TQLabel,
+  TQwtDial,
+  TQwtDial,
+   TQMultiLineEdit,
+  TQLabel,
+  TQLabel,
+  TQLabel,
   -1 };
 
 static int generated_defineMask(PARAM *p)
@@ -142,7 +206,7 @@ static int generated_defineMask(PARAM *p)
   sprintf(ss_name,"Substation %d",My_SS_Id-16);
 
   pvQFrame(p,schema_box,0,Box,Plain,1,1);
-  pvSetGeometry(p,schema_box,x,y,400,400);
+  pvSetGeometry(p,schema_box,x,y,500,400);
 //  pvSetPaletteForegroundColor(p,schema_box,76,76,76);
  // pvSetPaletteBackgroundColor(p,schema_box,242,241,240);
   pvSetPaletteBackgroundColor(p,schema_box,255,255,255);
@@ -150,51 +214,125 @@ static int generated_defineMask(PARAM *p)
 
   pvDownloadFile(p,"SS2_HMI.png");
   pvQImage(p,schema,schema_box,"SS2_HMI.png",&w,&h,&depth);
-  pvSetGeometry(p,schema,5,60,380,380);
+  pvSetGeometry(p,schema,25,60,380,380);
   pvSetFont(p,schema,"Ubuntu",11,0,0,0,0);
   pvSetWhatsThis(p,schema,pvtr("red_on.png"));
 
 
   pvQPushButton(p,trip_br,0);
-  pvSetGeometry(p,trip_br,x+100,y+360,80,30);
-  pvSetText(p,trip_br,pvtr("Trip"));
+  pvSetGeometry(p,trip_br,x+120,y+360,80,30);
+  pvSetText(p,trip_br,pvtr("Open"));
   pvSetPaletteForegroundColor(p,trip_br,0,0,0);
   pvSetFont(p,trip_br,"Ubuntu",12,1,0,0,0);  
 
   pvQPushButton(p,close_br,0);
-  pvSetGeometry(p,close_br,x+200,y+360,80,30);
+  pvSetGeometry(p,close_br,x+220,y+360,80,30);
   pvSetText(p,close_br,pvtr("Close"));
   pvSetFont(p,close_br,"Ubuntu",12,1,0,0,0);  
 
+  pvQLabel(p,label_g1,0);
+  pvSetGeometry(p,label_g1,x+5,y+133,100,30);
+  pvSetText(p,label_g1,"From SS1");
+  pvSetFont(p,label_g1,"Ubuntu",12,0,0,0,0);
+ 
+  pvQLabel(p,label_g2,0);
+  pvSetGeometry(p,label_g2,x+5,y+280,100,30);
+  pvSetText(p,label_g2,"From SS3");
+  pvSetFont(p,label_g2,"Ubuntu",12,0,0,0,0);
+ 
   pvQLabel(p,label_ss,0);
-  pvSetGeometry(p,label_ss,x+150,y+30,100,30);
+  pvSetGeometry(p,label_ss,x+180,y-30,100,30);
   pvSetText(p,label_ss,pvtr(ss_name));
   pvSetFont(p,label_ss,"Ubuntu",14,1,0,0,0);
- /*
-  pvQFrame(p,box_1,0,Box,Plain,4,1);
-  pvSetGeometry(p,box_1,x+45,y+130,15,15);
+
+  pvQLabel(p,label_alert,0);
+  pvSetGeometry(p,label_alert,x+590,y-30,100,30);
+  pvSetText(p,label_alert,"ALERTS");
+  pvSetFont(p,label_alert,"Ubuntu",14,1,0,0,0);
+
+  pvQLabel(p,label_87r1,0);
+  pvSetGeometry(p,label_87r1,x+312,y+125,100,30);
+  pvSetText(p,label_87r1,"87R");
+  pvSetFont(p,label_87r1,"Ubuntu",12,1,0,0,0); 
+
+  pvQLabel(p,label_87r2,0);
+  pvSetGeometry(p,label_87r2,x+312,y+288,100,30);
+  pvSetText(p,label_87r2,"87R");
+  pvSetFont(p,label_87r2,"Ubuntu",12,1,0,0,0); 
+
+  pvQFrame(p,box_1,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_1,x+79,y+141,12,12);
   pvSetPaletteForegroundColor(p,box_1,76,76,76);
   pvSetPaletteBackgroundColor(p,box_1,255,255,255); //White
   pvSetFont(p,box_1,"Ubuntu",11,0,0,0,0);
-
-  pvQFrame(p,box_2,0,Box,Plain,4,1);
-  pvSetGeometry(p,box_2,x+120,y+130,15,15);
+ 
+  pvQFrame(p,box_7,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_7,x+79,y+287,12,12);
+  pvSetPaletteForegroundColor(p,box_7,76,76,76);
+  pvSetPaletteBackgroundColor(p,box_7,255,255,255); //White
+  pvSetFont(p,box_7,"Ubuntu",11,0,0,0,0);
+ 
+  pvQFrame(p,box_2,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_2,x+84,y+162,12,12);
   pvSetPaletteForegroundColor(p,box_2,76,76,76);
   pvSetPaletteBackgroundColor(p,box_2,255,255,255); //White
   pvSetFont(p,box_2,"Ubuntu",11,0,0,0,0);
 
-  pvQFrame(p,box_3,0,Box,Plain,4,1);
-  pvSetGeometry(p,box_3,x+213,y+130,15,15);
+  pvQFrame(p,box_6,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_6,x+84,y+270,12,12);
+  pvSetPaletteForegroundColor(p,box_6,76,76,76);
+  pvSetPaletteBackgroundColor(p,box_6,255,255,255); //White
+  pvSetFont(p,box_6,"Ubuntu",11,0,0,0,0);
+
+  pvQFrame(p,box_3,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_3,x+151,y+150,12,12);
   pvSetPaletteForegroundColor(p,box_3,76,76,76);
   pvSetPaletteBackgroundColor(p,box_3,255,255,255); //White
   pvSetFont(p,box_3,"Ubuntu",11,0,0,0,0);
 
-  pvQFrame(p,box_4,0,Box,Plain,4,1);
-  pvSetGeometry(p,box_4,x+292,y+130,15,15);
+  pvQFrame(p,box_8,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_8,x+151,y+280,12,12);
+  pvSetPaletteForegroundColor(p,box_8,76,76,76);
+  pvSetPaletteBackgroundColor(p,box_8,255,255,255); //White
+  pvSetFont(p,box_8,"Ubuntu",11,0,0,0,0);
+
+  pvQFrame(p,box_4,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_4,x+241,y+150,12,12);
   pvSetPaletteForegroundColor(p,box_4,76,76,76);
   pvSetPaletteBackgroundColor(p,box_4,255,255,255); //White
   pvSetFont(p,box_4,"Ubuntu",11,0,0,0,0);
-*/
+
+  pvQFrame(p,box_9,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_9,x+241,y+280,12,12);
+  pvSetPaletteForegroundColor(p,box_9,76,76,76);
+  pvSetPaletteBackgroundColor(p,box_9,255,255,255); //White
+  pvSetFont(p,box_9,"Ubuntu",11,0,0,0,0);
+
+  pvQFrame(p,box_5,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_5,x+318,y+150,12,12);
+  pvSetPaletteForegroundColor(p,box_5,76,76,76);
+  pvSetPaletteBackgroundColor(p,box_5,255,255,255); //White
+  pvSetFont(p,box_5,"Ubuntu",11,0,0,0,0);
+
+  pvQFrame(p,box_10,0,Box,Plain,2,1);
+  pvSetGeometry(p,box_10,x+318,y+280,12,12);
+  pvSetPaletteForegroundColor(p,box_10,76,76,76);
+  pvSetPaletteBackgroundColor(p,box_10,255,255,255); //White
+  pvSetFont(p,box_10,"Ubuntu",11,0,0,0,0);
+
+
+  pvQwtDial(p,dial_l1,0);
+  pvSetGeometry(p,dial_l1,x+368,y+110,100,100);
+  pvSetFont(p,dial_l1,"Ubuntu",8,0,0,0,0);
+
+  pvQwtDial(p,dial_l2,0);
+  pvSetGeometry(p,dial_l2,x+368,y+260,100,100);
+  pvSetFont(p,dial_l2,"Ubuntu",8,0,0,0,0);
+  
+  pvQMultiLineEdit(p,alert_window,0,0,10);
+  pvSetGeometry(p,alert_window,x+530,y,200,300);
+  pvSetFont(p,alert_window,"Sans Serif",10,0,0,0,0);
+
   pvEndDefinition(p);
   return 0;
 }

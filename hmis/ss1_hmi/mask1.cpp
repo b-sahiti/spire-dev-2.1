@@ -66,6 +66,9 @@ enum {
   box_2,
   box_3,
   box_4,
+  to_label,
+  alert_window,
+  label_alert,
   ID_END_OF_WIDGETS
 };
 
@@ -83,10 +86,16 @@ enum {
   "box_2",
   "box_3",
   "box_4",
+  "to_label",
+  "alert_window",
+  "label_alert",
   "ID_END_OF_WIDGETS",
   ""};
 
   static const char *toolTip[] = {
+  "",
+  "",
+  "",
   "",
   "",
   "",
@@ -101,6 +110,9 @@ enum {
   "SS1_HMI.png",
   "red_on.png",
   "green_on.png",
+  "",
+  "",
+  "",
   "",
   "",
   "",
@@ -122,6 +134,9 @@ enum {
   TQFrame,
   TQFrame,
   TQFrame,
+  TQLabel,
+  TQMultiLineEdit,
+  TQLabel,
   -1 };
 
 static int generated_defineMask(PARAM *p)
@@ -142,22 +157,27 @@ static int generated_defineMask(PARAM *p)
   sprintf(ss_name,"Substation %d",My_SS_Id-16);
 
   pvQFrame(p,schema_box,0,Box,Plain,1,1);
-  pvSetGeometry(p,schema_box,x,y,400,250);
+  pvSetGeometry(p,schema_box,x,y,470,250);
 //  pvSetPaletteForegroundColor(p,schema_box,76,76,76);
  // pvSetPaletteBackgroundColor(p,schema_box,242,241,240);
   pvSetPaletteBackgroundColor(p,schema_box,255,255,255);
   pvSetFont(p,schema_box,"Ubuntu",11,0,0,0,0);
 
+  pvQLabel(p,to_label,0);
+  pvSetGeometry(p,to_label,x+360,y+125,100,30);
+  pvSetText(p,to_label,pvtr("To Substation 2"));
+  pvSetFont(p,to_label,"Ubuntu",11,1,0,0,0);
+
   pvDownloadFile(p,"SS1_HMI.png");
   pvQImage(p,schema,schema_box,"SS1_HMI.png",&w,&h,&depth);
-  pvSetGeometry(p,schema,5,60,380,380);
+  pvSetGeometry(p,schema,25,60,380,380);
   pvSetFont(p,schema,"Ubuntu",11,0,0,0,0);
   pvSetWhatsThis(p,schema,pvtr("red_on.png"));
 
 
   pvQPushButton(p,trip_br,0);
   pvSetGeometry(p,trip_br,x+100,y+190,80,30);
-  pvSetText(p,trip_br,pvtr("Trip"));
+  pvSetText(p,trip_br,pvtr("Open"));
   pvSetPaletteForegroundColor(p,trip_br,0,0,0);
   pvSetFont(p,trip_br,"Ubuntu",12,1,0,0,0);  
 
@@ -167,26 +187,26 @@ static int generated_defineMask(PARAM *p)
   pvSetFont(p,close_br,"Ubuntu",12,1,0,0,0);  
 
   pvQLabel(p,label_ss,0);
-  pvSetGeometry(p,label_ss,x+150,y+30,100,30);
+  pvSetGeometry(p,label_ss,x+190,y-30,100,30);
   pvSetText(p,label_ss,pvtr(ss_name));
   pvSetFont(p,label_ss,"Ubuntu",14,1,0,0,0);
 
   pvQFrame(p,box_1,0,Box,Plain,2,1);
-  pvSetGeometry(p,box_1,x+45,y+130,15,15);
+  pvSetGeometry(p,box_1,x+65,y+130,15,15);
   pvSetPaletteForegroundColor(p,box_1,76,76,76);
   //pvSetPaletteBackgroundColor(p,box_1,242,241,240);
   pvSetPaletteBackgroundColor(p,box_1,255,255,255); //White
   pvSetFont(p,box_1,"Ubuntu",11,0,0,0,0);
 
   pvQFrame(p,box_2,0,Box,Plain,2,1);
-  pvSetGeometry(p,box_2,x+120,y+130,15,15);
+  pvSetGeometry(p,box_2,x+140,y+130,15,15);
   pvSetPaletteForegroundColor(p,box_2,76,76,76);
   //pvSetPaletteBackgroundColor(p,box_2,242,241,240);
   pvSetPaletteBackgroundColor(p,box_2,255,255,255); //White
   pvSetFont(p,box_2,"Ubuntu",11,0,0,0,0);
 
   pvQFrame(p,box_3,0,Box,Plain,2,1);
-  pvSetGeometry(p,box_3,x+213,y+130,15,15);
+  pvSetGeometry(p,box_3,x+233,y+130,15,15);
   pvSetPaletteForegroundColor(p,box_3,76,76,76);
   //pvSetPaletteBackgroundColor(p,box_3,242,241,240); //Gray 
   pvSetPaletteBackgroundColor(p,box_3,255,255,255); //White
@@ -195,11 +215,22 @@ static int generated_defineMask(PARAM *p)
   pvSetFont(p,box_3,"Ubuntu",11,0,0,0,0);
 
   pvQFrame(p,box_4,0,Box,Plain,2,1);
-  pvSetGeometry(p,box_4,x+292,y+130,15,15);
+  pvSetGeometry(p,box_4,x+312,y+130,15,15);
   pvSetPaletteForegroundColor(p,box_4,76,76,76);
   //pvSetPaletteBackgroundColor(p,box_4,242,241,240);
   pvSetPaletteBackgroundColor(p,box_4,255,255,255); //White
   pvSetFont(p,box_4,"Ubuntu",11,0,0,0,0);
+
+
+  pvQLabel(p,label_alert,0);
+  pvSetGeometry(p,label_alert,x+550,y-30,100,30);
+  pvSetText(p,label_alert,"ALERTS");
+  pvSetFont(p,label_alert,"Ubuntu",14,1,0,0,0);
+
+  pvQMultiLineEdit(p,alert_window,0,0,10);
+  pvSetGeometry(p,alert_window,x+490,y,200,250);
+  pvSetFont(p,alert_window,"Sans Serif",10,0,0,0,0);
+
 
   pvEndDefinition(p);
   return 0;
