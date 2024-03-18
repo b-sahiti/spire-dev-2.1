@@ -149,7 +149,8 @@ int main(int argc, char *argv[])
     printf("spines ext=%d, relay ss port =%d \n",ss_spines_ext_port,relay_ss_port); 
     /*Net Setup*/
     Type = RTU_TYPE;
-    Prime_Client_ID = (NUM_SM + 1) + My_ID;
+    //Prime_Client_ID = (NUM_SM + 1) + My_ID;
+    Prime_Client_ID = MAX_NUM_SERVER_SLOTS + My_ID;
     My_IP = getIP();
     printf("My Prime Client ID is %d\n", Prime_Client_ID); 
 
@@ -176,8 +177,8 @@ int main(int argc, char *argv[])
     printf("My spines addr is %s and port is %d\n", cc_addrs[cc_id],SPINES_EXT_PORT);
 
     sprintf(itrc_thread.spines_ext_addr, "%s", cc_addrs[cc_id]);
-    sprintf(itrc_thread.spines_ext_port, "%d", SPINES_EXT_PORT);
-
+    //sprintf(itrc_thread.spines_ext_port, "%d",(int) SPINES_EXT_PORT);
+    itrc_thread.spines_ext_port=SPINES_EXT_PORT;
     printf("PROXY: Setting up ITRC CC_Proxy thread\n");
     fflush(stdout);
     pthread_create(&tid, NULL, &ITRC_CC_Connector, (void *)&itrc_thread);
