@@ -173,6 +173,8 @@ int main(int argc, char *argv[])
     	perror("Invalid connector id\n");
     }
 
+    printf("My spines addr is %s and port is %d\n", cc_addrs[cc_id],SPINES_EXT_PORT);
+
     sprintf(itrc_thread.spines_ext_addr, "%s", cc_addrs[cc_id]);
     sprintf(itrc_thread.spines_ext_port, "%d", SPINES_EXT_PORT);
 
