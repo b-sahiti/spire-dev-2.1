@@ -95,7 +95,7 @@ LinkedList dataSetValues;
 MmsValue *mms_trip;
 int timeout_ms;
 CommParameters gooseCommParameters;
-
+char* cc_addrs[NUM_CC_CONNECTORS] = CC_CONNECTORS;
 
 static void send_to_cc();
 static void print_notice();
@@ -625,6 +625,17 @@ static void send_to_cc(){
     dest.sin_family = AF_INET;
     int relay_ss_port=RELAY_SUBSTATION_BASE_PORT+((My_ID-16)*10);
     dest.sin_port = htons(relay_ss_port);
+    for(int i=0;i<NUM_CC_CONNECTORS;i++){
+    	dest.sin_addr.s_addr = inet_addr(cc_addrs[i]);
+    	ret = spines_sendto(s, mess,sizeof(signed_update_message),
+           0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+    	if (ret != sizeof(signed_update_message)) {
+        	Alarm(PRINT,"Error Sending to cc_connector ret=%d mess size=%d\n",ret,sizeof(*mess));
+    	}else{
+    	Alarm(PRINT,"Sent to cc_connector (%s:%d) seq_num=%d size=%d\n",cc_addrs[i],relay_ss_port,seq_num,ret);
+    	}
+    }
+    /*
     dest.sin_addr.s_addr = inet_addr(SPINES_RTU_ADDR);
     ret = spines_sendto(s, mess,sizeof(signed_update_message),
            0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
@@ -634,6 +645,8 @@ static void send_to_cc(){
     }else{
     	Alarm(PRINT,"Sent to cc_connector (%s:%d) seq_num=%d size=%d\n",SPINES_RTU_ADDR,relay_ss_port,seq_num,ret);
     }
+
+    */
     //send to ss hmi
     dest.sin_port = htons(relay_ss_port);
     dest.sin_addr.s_addr = inet_addr(HMI_Addr);
