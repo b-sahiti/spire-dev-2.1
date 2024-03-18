@@ -135,6 +135,9 @@ pvb/designer/src/Makefile.pvbplugin
 !hmis/heco_timing/Makefile
 !hmis/jhu_hmi/Makefile
 !hmis/pnnl_hmi/Makefile
+!hmis/ss1_hmi/Makefile
+!hmis/ss2_hmi/Makefile
+!hmis/ss3_hmi/Makefile
 !modbus/Makefile
 !plcs/Makefile
 !prime/src/Makefile
