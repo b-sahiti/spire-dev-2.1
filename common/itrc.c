@@ -2189,6 +2189,7 @@ int ITRC_Validate_Message(signed_message *mess)
             switch (rtu_mess->scen_type) {
                 case JHU:
                 case PNNL:
+                case INTEGRATED_CC:
                     break;
                 case EMS:
                     ems_data = (ems_fields *)&rtu_mess->data;
