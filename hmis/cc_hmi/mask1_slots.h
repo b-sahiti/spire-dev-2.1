@@ -496,25 +496,31 @@ static int slotButtonPressedEvent(PARAM *p, int id, DATA *dptr)
       if(id==68){
         printf("BREAKER ON Constructed id=%d\n",id);
         mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_ON, 1);
+	Append_SS_History("CC CMD: SS1 Open Issued");
       }
       if(id==69){
         printf("BREAKER OFF Constructed id=%d\n",id);
         mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_OFF, 1);
+	Append_SS_History("CC CMD: SS1 Close Issued");
       }
       if(id==70){
         printf("BREAKER ON Constructed id=%d\n",id);
         mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_ON, 2);
+	Append_SS_History("CC CMD: SS2 Open Issued");
       }
       if(id==71){
         printf("BREAKER OFF Constructed id=%d\n",id);
         mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_OFF, 2);
+	Append_SS_History("CC CMD: SS2 Close Issued");
       }if(id==72){
         printf("BREAKER ON Constructed id=%d\n",id);
         mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_ON, 3);
+	Append_SS_History("CC CMD: SS3 Open Issued");
       }
       if(id==73){
         printf("BREAKER OFF Constructed id=%d\n",id);
         mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_OFF, 3);
+	Append_SS_History("CC CMD: SS3 Close Issued");
       }
       nbytes = sizeof(signed_message) + mess->len;
       Seq_Num++;

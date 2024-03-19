@@ -136,3 +136,4 @@ void Init_Master(DATA *);
 void Read_From_Master(int s, int dummy1, void *dummy2);
 void Execute_Script(int s, int dummy1, void *dummy2);
 void Append_History(const char *m, ...);
+void Append_SS_History(const char *m, ...);

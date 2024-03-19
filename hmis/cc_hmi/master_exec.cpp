@@ -159,8 +159,11 @@ void Process_CC_Message(signed_message *mess)
         printf("No browser connected\n");
         return;
     }
-     if(sf->ss_id==24){//SS1
+     if(sf->ss_id==48){//SS1
     if(sf->breaker_state==1){//trip
+	if(d->ss_read_arr[0].value==0){
+	   Append_SS_History("SS1 CB Status-Opened");
+	}
         printf("Set status of SS1 to trip\n");
         d->ss_read_arr[0].value = 1;
         d->ss_read_arr[1].value = 0;
@@ -169,13 +172,19 @@ void Process_CC_Message(signed_message *mess)
 
     }//trip
     else{//close
+	if(d->ss_read_arr[0].value==1){
+	   Append_SS_History("SS1 CB Status-Closed");
+	}
         printf("Set status of SS1 to close\n");
         d->ss_read_arr[0].value = 0;
         d->ss_read_arr[1].value = 1;
                 }//close
     }//SS1
-   if(sf->ss_id==25){//SS2
+   if(sf->ss_id==49){//SS2
     if(sf->breaker_state==1){//trip
+	if(d->ss_read_arr[2].value==0){
+	   Append_SS_History("SS2 CB Status-Opened");
+	}
         printf("Set status of SS2 to trip\n");
         d->ss_read_arr[2].value = 1;
         d->ss_read_arr[3].value = 0;
@@ -186,13 +195,19 @@ void Process_CC_Message(signed_message *mess)
 
     }//trip
     else{//close
+	if(d->ss_read_arr[2].value==1){
+	   Append_SS_History("SS2 CB Status-Closed");
+	}
         printf("Set status of SS2 to close\n");
         d->ss_read_arr[2].value = 0;
         d->ss_read_arr[3].value = 1;
                 }//close
     }//SS2
-   if(sf->ss_id==26){//SS3
+   if(sf->ss_id==50){//SS3
     if(sf->breaker_state==1){//trip
+	if(d->ss_read_arr[4].value==0){
+	   Append_SS_History("SS3 CB Status-Opened");
+	}
         printf("Set status of SS3 to trip\n");
         d->ss_read_arr[4].value = 1;
         d->ss_read_arr[5].value = 0;
@@ -203,6 +218,9 @@ void Process_CC_Message(signed_message *mess)
 
     }//trip
     else{//close
+	if(d->ss_read_arr[4].value==1){
+	   Append_SS_History("SS3 CB Status-Closed");
+	}
         printf("Set status of SS3 to close\n");
         d->ss_read_arr[4].value = 0;
         d->ss_read_arr[5].value = 1;
@@ -420,6 +438,32 @@ void Append_History(const char *m, ...)
     va_end(ap);
 
     stdcarr_push_back(&Script_History, time_str);
+    Script_History_Seq++;
+
+    if (stdcarr_size(&Script_History) > 25)
+        stdcarr_pop_front_n(&Script_History, stdcarr_size(&Script_History) - 25);
+}
+
+void Append_SS_History(const char *m, ...)
+{
+    va_list ap;
+
+    struct tm *tm_info;
+    struct timeval tv;
+    int time_len;
+    char buff[100];
+
+    gettimeofday(&tv,NULL);
+    tm_info=localtime(&tv.tv_sec);
+    time_len=0;
+    time_len+=(int) strftime(buff,sizeof(buff),"%H:%M:%S",tm_info);
+    time_len+=snprintf(buff+time_len,sizeof(buff-time_len),".%03ld : ",tv.tv_usec/1000);
+
+    va_start(ap, m);
+    vsnprintf(buff + time_len, sizeof(buff) - time_len, m, ap);
+    va_end(ap);
+
+    stdcarr_push_back(&Script_History, buff);
     Script_History_Seq++;
 
     if (stdcarr_size(&Script_History) > 25)
