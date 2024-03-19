@@ -2183,8 +2183,10 @@ int ITRC_Validate_Message(signed_message *mess)
             // rtu_bytes = recvd_bytes - sizeof(signed_message);
             // if (rtu_bytes < sizeof(rtu_data_msg)) return 0;
             rtu_mess = (rtu_data_msg *)(mess + 1);
-            if (rtu_mess->rtu_id >= NUM_RTU || rtu_mess->seq.seq_num == 0)
-                return 0;
+            if (rtu_mess->rtu_id >= NUM_RTU || rtu_mess->seq.seq_num == 0){
+		 printf("return 0 for rtu_id=%d seq=%lu\n",rtu_mess->rtu_id,rtu_mess->seq.seq_num);
+		    return 0;
+	    }
 
             switch (rtu_mess->scen_type) {
                 case JHU:
