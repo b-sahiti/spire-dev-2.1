@@ -67,6 +67,7 @@ using namespace std;
 #define BR_CLOSED 3
 #define BR_TRIP 4
 #define BR_CLOSE 5
+#define SS_LOAD 6
 
 enum Script_Button_States {NO_BUTTON, RESTART_SCRIPT, PAUSE_SCRIPT, CONTINUE_SCRIPT};
 
@@ -103,6 +104,10 @@ typedef struct data_model_d // (todo: define your data structure here)
     point_info   point_arr[NUM_POINT];
     breaker_info br_read_arr[NUM_BREAKER];
     breaker_info br_write_arr[NUM_BREAKER];
+    point_info   ss_arr[SUBSTATION_NUM_POINT];
+    point_info   load_dial_arr[SUBSTATION_NUM_POINT];
+    breaker_info ss_read_arr[SUBSTATION_NUM_BREAKER];
+    breaker_info ss_write_arr[SUBSTATION_NUM_BREAKER];
 }
 data_model;
 
@@ -122,6 +127,7 @@ extern sp_time Next_Button, Button_Pressed_Duration;
 typedef struct {
     data_model *dm;
     struct timeval button_press_time;
+    struct timeval ss_button_press_time;
     int print_seq;
 }
 DATA;

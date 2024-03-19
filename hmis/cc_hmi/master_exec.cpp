@@ -63,7 +63,7 @@ extern "C" {
     #include "openssl_rsa.h"
 }
 
-
+void Process_CC_Message(signed_message *);
 void Process_Message(signed_message *);
 void Clear_All_Buttons();
 void Push_Buttons(int btype);
@@ -105,6 +105,7 @@ void Read_From_Master(int s, int dummy1, void *dummy2)
     int ret; 
     char buf[MAX_LEN];
     signed_message *cmess;
+    hmi_update_msg *hmi_up;
 
     UNUSED(dummy1);
     UNUSED(dummy2);
@@ -116,8 +117,114 @@ void Read_From_Master(int s, int dummy1, void *dummy2)
         Process_Config_Msg((signed_message *)buf,ret);
         return;
     }
+    hmi_up = (hmi_update_msg *)(cmess + 1);
+    if(hmi_up->scen_type==PNNL){
     Process_Message((signed_message *)buf);
+    }else if (hmi_up->scen_type==INTEGRATED_CC){
+     Process_CC_Message((signed_message *)buf);
+        }
+    else{
+    printf("Invalid Scenario Type=%d\n",hmi_up->scen_type);
+
+        }
 }
+
+void Process_CC_Message(signed_message *mess)
+{
+    int i, len, expected_size;
+    struct timeval now, then, diff;
+    hmi_update_msg *hmi_up;
+    data_model *d;
+    substation_fields *sf;
+
+    hmi_up = (hmi_update_msg *)(mess + 1);
+
+    if (hmi_up->scen_type != INTEGRATED_CC) {
+        printf("Process_Message: INVALID SCENARIO: %d\n", hmi_up->scen_type);
+        return;
+    }
+
+    len = hmi_up->len;
+    expected_size=sizeof(substation_fields);
+    if (len != expected_size) {
+        printf("Process_Message: INVALID LENGTH: %d, expected %d\n", len, expected_size);
+        return;
+    }
+
+    sf=(substation_fields *)(hmi_up+1);
+    printf("Received SUBSTATION (machine id %d) HMI UPDATE MESSAGE state=%lu, ts= %lu\n",sf->ss_id,sf->breaker_state,sf->dts);
+
+    d = &the_model;
+    if(d == NULL) {
+        printf("No browser connected\n");
+        return;
+    }
+     if(sf->ss_id==24){//SS1
+    if(sf->breaker_state==1){//trip
+        printf("Set status of SS1 to trip\n");
+        d->ss_read_arr[0].value = 1;
+        d->ss_read_arr[1].value = 0;
+        d->ss_arr[0].value=0;
+        d->load_dial_arr[0].value=0;
+
+    }//trip
+    else{//close
+        printf("Set status of SS1 to close\n");
+        d->ss_read_arr[0].value = 0;
+        d->ss_read_arr[1].value = 1;
+                }//close
+    }//SS1
+   if(sf->ss_id==25){//SS2
+    if(sf->breaker_state==1){//trip
+        printf("Set status of SS2 to trip\n");
+        d->ss_read_arr[2].value = 1;
+        d->ss_read_arr[3].value = 0;
+        d->ss_arr[0].value=0;
+        d->ss_arr[1].value=0;
+        d->load_dial_arr[0].value=0;
+        d->load_dial_arr[1].value=0;
+
+    }//trip
+    else{//close
+        printf("Set status of SS2 to close\n");
+        d->ss_read_arr[2].value = 0;
+        d->ss_read_arr[3].value = 1;
+                }//close
+    }//SS2
+   if(sf->ss_id==26){//SS3
+    if(sf->breaker_state==1){//trip
+        printf("Set status of SS3 to trip\n");
+        d->ss_read_arr[4].value = 1;
+        d->ss_read_arr[5].value = 0;
+        d->ss_arr[1].value=0;
+        d->ss_arr[2].value=0;
+        d->load_dial_arr[1].value=0;
+        d->load_dial_arr[2].value=0;
+
+    }//trip
+    else{//close
+        printf("Set status of SS3 to close\n");
+        d->ss_read_arr[4].value = 0;
+        d->ss_read_arr[5].value = 1;
+                }//close
+    }//SS3
+
+   if((d->ss_read_arr[0].value==0 && d->ss_read_arr[1].value==1)&&(d->ss_read_arr[2].value==0 && d->ss_read_arr[3].value==1)){
+        d->ss_arr[0].value=75;
+        d->load_dial_arr[0].value=75;
+   }//l1=50 if ss1 and ss2 are closed
+
+   if((d->ss_read_arr[2].value==0 && d->ss_read_arr[3].value==1)&&(d->ss_read_arr[4].value==0 && d->ss_read_arr[5].value==1)){
+        d->ss_arr[1].value=50;
+        d->load_dial_arr[1].value=50;
+   }
+   if((d->ss_read_arr[4].value==0 && d->ss_read_arr[5].value==1)){
+        d->ss_arr[2].value=50;
+        d->load_dial_arr[2].value=50;
+   }
+
+}
+
 
 void Process_Message(signed_message *mess) 
 {

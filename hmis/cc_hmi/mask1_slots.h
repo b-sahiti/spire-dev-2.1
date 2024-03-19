@@ -98,6 +98,22 @@ void modelInit()
   Script_Breaker_Index = 0;
   Script_Breaker_Val = BREAKER_ON;
 
+  /*Set up Load Info */
+  for(int i = 0; i < SUBSTATION_NUM_POINT; i++){
+    d->ss_arr[i].type = SS_LOAD;
+    d->ss_arr[i].value = 50;
+    d->load_dial_arr[i].type = DIAL;
+    d->load_dial_arr[i].value = 50;
+        }
+  d->ss_arr[0].value = 75;
+  d->load_dial_arr[0].value = 75;
+  d->ss_arr[0].id=label_l1;
+  d->ss_arr[1].id=label_l2;
+  d->ss_arr[2].id=label_l3;
+  d->load_dial_arr[0].id=dial_load1;
+  d->load_dial_arr[1].id=dial_load2;
+  d->load_dial_arr[2].id=dial_load3;
+
   /* Setup the points (shorts) */
   for(int i = 0; i < NUM_POINT; i++) {
     d->point_arr[i].type = DIAL;
@@ -184,6 +200,46 @@ void modelInit()
   d->br_write_arr[13].id = close_b57;
     strncpy(d->br_write_arr[13].to_str, "Close B57", sizeof(d->br_write_arr[13].to_str));
 
+  /* Setup the CC-SS read-write breakers */
+  for(int i=0; i < SUBSTATION_NUM_BREAKER; i += 2) {
+    d->ss_read_arr[i].type = BR_OPENED;
+    d->ss_read_arr[i].value = 0;
+    d->ss_read_arr[i+1].type = BR_CLOSED;
+    d->ss_read_arr[i+1].value = 1;
+  }
+  d->ss_read_arr[0].id  = opened_ss1;
+    strncpy(d->ss_read_arr[0].to_str, "SS1 Opened", sizeof(d->ss_read_arr[0].to_str));
+  d->ss_read_arr[1].id  = closed_ss1;
+    strncpy(d->ss_read_arr[1].to_str, "SS1 Closed", sizeof(d->ss_read_arr[1].to_str));
+  d->ss_read_arr[2].id  = opened_ss2;
+    strncpy(d->ss_read_arr[2].to_str, "SS2 Opened", sizeof(d->ss_read_arr[2].to_str));
+  d->ss_read_arr[3].id  = closed_ss2;
+    strncpy(d->ss_read_arr[3].to_str, "SS2 Closed", sizeof(d->ss_read_arr[3].to_str));
+  d->ss_read_arr[4].id  = opened_ss3;
+    strncpy(d->ss_read_arr[4].to_str, "SS3 Opened", sizeof(d->ss_read_arr[4].to_str));
+  d->ss_read_arr[5].id  = closed_ss3;
+    strncpy(d->ss_read_arr[5].to_str, "SS3 Closed", sizeof(d->ss_read_arr[5].to_str));
+
+  for(int i=0; i < SUBSTATION_NUM_BREAKER; i += 2 ) {
+    d->ss_write_arr[i].type = BR_TRIP;
+    d->ss_write_arr[i].value = 0;
+    d->ss_write_arr[i+1].type = BR_CLOSE;
+    d->ss_write_arr[i+1].value = 1;
+  }
+
+  d->ss_write_arr[0].id  = trip_ss1;
+    strncpy(d->ss_write_arr[0].to_str, "Trip SS1", sizeof(d->ss_write_arr[0].to_str));
+  d->ss_write_arr[1].id  = close_ss1;
+    strncpy(d->ss_write_arr[1].to_str, "Close SS1", sizeof(d->ss_write_arr[1].to_str));
+  d->ss_write_arr[2].id  = trip_ss2;
+    strncpy(d->ss_write_arr[2].to_str, "Trip SS2", sizeof(d->ss_write_arr[2].to_str));
+  d->ss_write_arr[3].id  = close_ss2;
+    strncpy(d->ss_write_arr[3].to_str, "Close SS2", sizeof(d->ss_write_arr[3].to_str));
+  d->ss_write_arr[4].id  = trip_ss3;
+    strncpy(d->ss_write_arr[4].to_str, "Trip SS3", sizeof(d->ss_write_arr[4].to_str));
+  d->ss_write_arr[5].id  = close_ss3;
+    strncpy(d->ss_write_arr[5].to_str, "Close SS3", sizeof(d->ss_write_arr[5].to_str));
+
   /* Setup the Script_Pipe */
   if (pipe(Script_Pipe) != 0)
     printf("Pipe failure on Script_Pipe\n"), exit(EXIT_FAILURE);
@@ -225,6 +281,18 @@ static int slotInit(PARAM *p, DATA *dptr)
     qwtDialSetValue(p,d->point_arr[i].id,d->point_arr[i].value);
   }
 
+
+ for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
+        pvSetText(p,d->ss_arr[i].id,d->ss_arr[i].to_str);
+       //printf("SS %d id=%d text= %s\n",i,d->ss_arr[i].id ,d->ss_arr[i].to_str);
+       qwtDialSetRange(p,d->load_dial_arr[i].id,0,100.0);
+       qwtDialSetNeedle(p,d->load_dial_arr[i].id,QwtDialArrowNeedle,255,0,0,255,0,0,0,0,0);
+       qwtDialShowBackground(p,d->load_dial_arr[i].id,0);
+       qwtDialSetFrameShadow(p,d->load_dial_arr[i].id,DialPlain);
+       //printf("1. set load dial %d to %d\n",i,d->load_dial_arr[i].value);
+       qwtDialSetValue(p,d->load_dial_arr[i].id,d->load_dial_arr[i].value);
+  }
+
   pvSetValue(p,script_history,25);
   pvSetEditable(p,script_history,0);
 
@@ -253,6 +321,14 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
     qwtDialSetValue(p,d->point_arr[i].id,d->point_arr[i].value);
   } 
 
+  for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
+       sprintf(d->ss_arr[i].to_str,"L%d:%d kW",i+1,d->ss_arr[i].value);
+       //printf("SS %d id=%d text= %s\n",i,d->ss_arr[i].id ,d->ss_arr[i].to_str);
+        pvSetText(p,d->ss_arr[i].id,d->ss_arr[i].to_str);
+        //printf("set load dial %d to %d\n",i,d->load_dial_arr[i].value);
+        qwtDialSetValue(p,d->load_dial_arr[i].id,d->load_dial_arr[i].value);
+  }
+
   /* Update the read-only breakers */
   for (int i = 0; i < NUM_BREAKER; i++) {
     if (d->br_read_arr[i].type == BR_OPENED) {
@@ -280,6 +356,39 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
       }
     }
   }
+
+  for (int i = 0; i < SUBSTATION_NUM_BREAKER; i++) {
+    if (d->ss_read_arr[i].type == BR_OPENED) {
+      if (d->ss_read_arr[i].value == 0) {
+        //printf("SS %d val=%d green off\n",i, d->ss_read_arr[i].value);
+        pvSetImage(p, d->ss_read_arr[i].id, "green_off.png");
+      }
+      else if (d->ss_read_arr[i].value == 1) {
+        //printf("SS %d val=%d green on\n",i, d->ss_read_arr[i].value);
+        pvSetImage(p, d->ss_read_arr[i].id, "green_on.png");
+      }
+      else {
+        printf("ERROR: invalid value (%d) for opened read breaker %d\n",
+                d->ss_read_arr[i].value, i);
+      }
+    }
+    else if (d->ss_read_arr[i].type == BR_CLOSED) {
+      if (d->ss_read_arr[i].value == 0) {
+          //printf("SS %d val=%d red off\n",i, d->ss_read_arr[i].value);
+          pvSetImage(p, d->ss_read_arr[i].id, "red_off.png");
+      }
+      else if (d->ss_read_arr[i].value == 1) {
+       // printf("SS %d val=%d red on\n",i, d->ss_read_arr[i].value);
+          pvSetImage(p, d->ss_read_arr[i].id, "red_on.png");
+      }
+      else {
+        printf("ERROR: invalid value (%d) for closed read breaker %d\n",
+                d->ss_read_arr[i].value, i);
+      }
+    }
+  }
+
+
 
   /* Update the read-write breakers - Nothing at the moment? */
   for (int i = 0; i < NUM_BREAKER; i++) {
@@ -350,7 +459,7 @@ static int slotButtonPressedEvent(PARAM *p, int id, DATA *dptr)
 {
   signed_message *mess; 
   seq_pair ps;
-  int nbytes;
+  int nbytes,ret;
   data_model *d;
 
   if(p == NULL || id == 0 || dptr == NULL) return -1;
@@ -378,6 +487,49 @@ static int slotButtonPressedEvent(PARAM *p, int id, DATA *dptr)
       return 0;
     }
   }
+
+
+  if(id>=68 && id <=73){
+      gettimeofday(&dptr->ss_button_press_time, NULL);
+        ps.incarnation = My_Incarnation;
+      ps.seq_num = Seq_Num;
+      if(id==68){
+        printf("BREAKER ON Constructed id=%d\n",id);
+        mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_ON, 1);
+      }
+      if(id==69){
+        printf("BREAKER OFF Constructed id=%d\n",id);
+        mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_OFF, 1);
+      }
+      if(id==70){
+        printf("BREAKER ON Constructed id=%d\n",id);
+        mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_ON, 2);
+      }
+      if(id==71){
+        printf("BREAKER OFF Constructed id=%d\n",id);
+        mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_OFF, 2);
+      }if(id==72){
+        printf("BREAKER ON Constructed id=%d\n",id);
+        mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_ON, 3);
+      }
+      if(id==73){
+        printf("BREAKER OFF Constructed id=%d\n",id);
+        mess = PKT_Construct_HMI_Command_Msg(ps, MAX_EMU_RTU + My_ID, INTEGRATED_CC, BREAKER_OFF, 3);
+      }
+      nbytes = sizeof(signed_message) + mess->len;
+      Seq_Num++;
+      ret=IPC_Send(ipc_sock, (void *)mess, nbytes, itrc_in.ipc_remote);
+      if(ret!=nbytes){
+      	printf("Error in IPC Send of HMI command\n");
+      }else{
+      	printf("IPC sent HMI CC cmd\n");
+      }
+      
+      free(mess);
+      return 0;
+
+
+   }
 
   return 0;
 }

@@ -82,7 +82,7 @@
 
 /* Integrated SUBSTATION scenario definitions */
 #define SUBSTATION_NUM_POINT 10
-
+#define SUBSTATION_NUM_BREAKER 6
 /*
  * Message types:
  *   DUMMY = dummy

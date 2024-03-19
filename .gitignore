@@ -64,6 +64,7 @@ hmis/pnnl_hmi/pnnl_hmi
 hmis/ss1_hmi/ss_hmi
 hmis/ss2_hmi/ss_hmi
 hmis/ss3_hmi/ss_hmi
+hmis/cc_hmi/cc_hmi
 
 
 scada_master/gen_keys
@@ -135,6 +136,7 @@ pvb/designer/src/Makefile.pvbplugin
 !hmis/heco_timing/Makefile
 !hmis/jhu_hmi/Makefile
 !hmis/pnnl_hmi/Makefile
+!hmis/cc_hmi/Makefile
 !hmis/ss1_hmi/Makefile
 !hmis/ss2_hmi/Makefile
 !hmis/ss3_hmi/Makefile
