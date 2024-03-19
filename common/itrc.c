@@ -587,7 +587,7 @@ void *ITRC_Prime_Inject(void *data)
                     continue;
                 }
 
-                    //printf("Prime_Inject: valid message type (%d) from client\n", mess->type);
+                    printf("Prime_Inject: valid message type (%d) from client\n", mess->type);
                 ret = OPENSSL_RSA_Verify((unsigned char*)mess + SIGNATURE_SIZE,
                             sizeof(signed_message) + mess->len - SIGNATURE_SIZE,
                             (unsigned char *)mess, mess->machine_id, RSA_CLIENT);
@@ -614,7 +614,7 @@ void *ITRC_Prime_Inject(void *data)
                     /* close(prime_sock);
                     FD_CLR(prime_sock, &mask); */
                 }
-                //printf("Sent to prime mess type %d from %d\n",mess->type, mess->machine_id);
+                printf("Sent to prime mess type %d from %d\n",mess->type, mess->machine_id);
             }
             /*MS2022: Message from Config Agent*/
             /*
@@ -972,8 +972,8 @@ void *ITRC_Master(void *data)
                 //MS2022 - Comment this print in actual runs
                 struct timeval prime_t;
                 gettimeofday(&prime_t,NULL);
-                //printf("Received message of type %d from prime_sock at %lu, %lu\n",mess->type,prime_t.tv_sec,prime_t.tv_usec);
-                //printf("Prime [%d]: %d of %d\n", res->ord_num, res->event_idx, res->event_tot);
+                printf("Received message of type %d from prime_sock at %lu, %lu\n",mess->type,prime_t.tv_sec,prime_t.tv_usec);
+                printf("Prime [%d]: %d of %d\n", res->ord_num, res->event_idx, res->event_tot);
 
                 /* Check for valid message type */
                 /* We don't validate messages from Prime at this level, since
