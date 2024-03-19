@@ -1868,6 +1868,9 @@ int ITRC_Send_TC_Final(int sp_ext_sk, signed_message *mess)
         hmiu = (hmi_update_msg *)(scada_mess + 1);
         dest.sin_family = AF_INET;
         dest.sin_port = htons(HMI_BASE_PORT + hmiu->scen_type);
+	if( hmiu->scen_type==INTEGRATED_CC){
+                dest.sin_port = htons(HMI_BASE_PORT + PNNL);
+        }
         dest.sin_addr.s_addr = inet_addr(SPINES_HMI_ADDR);
     }
     /* BENCHMARK */
