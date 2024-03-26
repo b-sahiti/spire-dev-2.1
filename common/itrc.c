@@ -1862,6 +1862,22 @@ int ITRC_Send_TC_Final(int sp_ext_sk, signed_message *mess)
         dest.sin_port = htons(RTU_BASE_PORT + loc);
         dest.sin_addr.s_addr = inet_addr(SPINES_RTU_ADDR);
         dest.sin_family = AF_INET;
+	if(loc>=SUBSTATION_RTU_ID_BASE and loc<NUM_RTU){
+	//TODO: for loop send and return
+	  char* cc_addrs[NUM_CC_CONNECTORS] = CC_CONNECTORS;
+	  for(int i=0; i<NUM_CC_CONNECTORS;i++){
+	  	dest.sin_addr.s_addr = inet_addr(cc_addrs[i]);
+	        ret = spines_sendto(sp_ext_sk, mess, sizeof(signed_message) + sizeof(tc_final_msg),0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+               if ((int32u)ret != sizeof(signed_message) + sizeof(tc_final_msg)) {
+                  printf("ITRC_Send_TC_Final: spines_sendto error!\n");
+               return -1;
+    		}else{
+		  printf("Sent to CC connector at %s:%d\n",cc_addrs[i],RTU_BASE_PORT+loc);
+		}
+	  }
+
+	return 1;	
+	}
     }
     /* Toward HMI */
     else if (scada_mess->type == HMI_UPDATE) {
