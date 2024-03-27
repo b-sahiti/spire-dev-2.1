@@ -70,8 +70,10 @@
 #include "scada_packets.h"
 #include "ss_net_wrapper.h"
 
-int ipc_sock,My_SS_ID;
+int ipc_sock,My_SS_ID,hmi_send_sock;
 char ipc_buff[MAX_LEN], mu_proxy_ipc_path[128];
+struct sockaddr_in dest;
+int relay_ss_port;
 
 static void process_msg(int source, void *dummy);
 
@@ -83,19 +85,34 @@ int main(int argc, char *argv[])
   Alarm_set_types(PRINT);
   Alarm_set_types(STATUS);
   Alarm_set_types(DEBUG);
+
   if(argc<2){
     Alarm(EXIT,"Usage: ./mu_proxy SS_ID\n");
   }
   sscanf(argv[1],"%d",&My_SS_ID);
+  int ss_spines_ext_port=SS_SPINES_EXT_BASE_PORT+((My_SS_ID-16)*10);
+  Load_SS_Conf(My_SS_ID);
   memset(mu_proxy_ipc_path,0,sizeof(mu_proxy_ipc_path));
   sprintf(mu_proxy_ipc_path,"%s%d",(char *)MU_IPC_OUT,My_SS_ID);
-  
+  /*IPC to receive from MU*/ 
   ipc_sock = IPC_DGram_Sock(mu_proxy_ipc_path);
   if(ipc_sock<0){
   	Alarm(EXIT,"Error setting up ipc sock");
   }else{
-  	Alarm(PRINT,"Set up IPC\n");
+  	Alarm(PRINT,"Set up IPC - Done !\n");
   }
+  /*Spines sock to send to SS  HMI*/
+  char * addr=Breaker_Addr;
+  Alarm(PRINT,"sp_addr=%s, port=%d\n",addr,ss_spines_ext_port);
+  hmi_send_sock = Spines_SendOnly_Sock(addr,ss_spines_ext_port,SPINES_PRIORITY);
+  if(hmi_send_sock<0){
+    Alarm(EXIT,"hmi_sed_Sock error\n");
+  }
+  dest.sin_family= AF_INET;
+  relay_ss_port=RELAY_SUBSTATION_BASE_PORT+((My_SS_ID-16)*10);
+  dest.sin_port = htons(relay_ss_port);
+  dest.sin_addr.s_addr = inet_addr(HMI_Addr);
+
 
   E_init();
   E_attach_fd(ipc_sock,READ_FD,process_msg,NULL,NULL,MEDIUM_PRIORITY);
@@ -109,9 +126,10 @@ void process_msg(int source, void *dummy){
     signed_message *rtu_mess_header;
     rtu_data_msg *rtu_data;
     substation_fields *sf;
-    int mess_len;
+    int mess_len,sent_len;
 
     mess_len=0;
+    sent_len=0;
     mess_len=IPC_Recv(ipc_sock,ipc_buff,MAX_LEN);
 
     if(mess_len==sizeof(signed_update_message)){
@@ -121,6 +139,12 @@ void process_msg(int source, void *dummy){
         rtu_data=(rtu_data_msg *) (rtu_mess_header+1);
         sf=(substation_fields *)rtu_data->data;
         Alarm(PRINT,"Message from ss=%d state=%d ts=%lu\n",sf->ss_id, sf->breaker_state,sf->dts);
+	sent_len=spines_sendto(hmi_send_sock,mess,sizeof(signed_update_message),0,(struct sockaddr *)&dest, sizeof(struct sockaddr));
+	if(sent_len!=mess_len){
+	  Alarm (PRINT, "error sending to HMI\n");
+	}else{
+	  Alarm(PRINT,"sent to HMI %s: %d\n",HMI_Addr,relay_ss_port);
+	}
     
     }
 
