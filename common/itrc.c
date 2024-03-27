@@ -1862,7 +1862,7 @@ int ITRC_Send_TC_Final(int sp_ext_sk, signed_message *mess)
         dest.sin_port = htons(RTU_BASE_PORT + loc);
         dest.sin_addr.s_addr = inet_addr(SPINES_RTU_ADDR);
         dest.sin_family = AF_INET;
-	if(loc>=SUBSTATION_RTU_ID_BASE and loc<NUM_RTU){
+	if(loc>=SUBSTATION_RTU_ID_BASE && loc<NUM_RTU){
 	//TODO: for loop send and return
 	  char* cc_addrs[NUM_CC_CONNECTORS] = CC_CONNECTORS;
 	  for(int i=0; i<NUM_CC_CONNECTORS;i++){
