@@ -50,8 +50,11 @@
 include ../Makefile.general
 base_dir = ..
 
-TARGET= relay_proxy simple_cb_proxy counting_cb_proxy  
+TARGET= relay_proxy simple_cb_proxy counting_cb_proxy mu_proxy 
 INC= -I ../common $(IEC_INC) $(SPINES_INC) $(SPREADUTIL_INC) $(TC_INC) 
+
+MU_OBJ = mu_proxy.o \
+	 ../common/ss_net_wrapper.o
 
 
 RELAY_OBJ= relay_proxy.o \
@@ -73,8 +76,11 @@ COUNT_CB_OBJ= counting_cb_proxy.o \
         	../common/ss_openssl_rsa.o \
 		../common/packets.o
 
-all:  relay_proxy simple_cb_proxy counting_cb_proxy  
+all:  relay_proxy simple_cb_proxy counting_cb_proxy mu_proxy 
 
+
+mu_proxy:	$(MU_OBJ)
+	$(CC) $(LDFLAGS) -o mu_proxy $(MU_OBJ) $(IEC_LIB) $(SPINES_LIB) $(SPREADUTIL_LIB) $(TC_LIB)
 
 relay_proxy:	$(RELAY_OBJ)
 	$(CC) $(LDFLAGS) -o relay_proxy $(RELAY_OBJ) $(IEC_LIB) $(SPINES_LIB) $(SPREADUTIL_LIB) $(TC_LIB)

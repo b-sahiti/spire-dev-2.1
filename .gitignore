@@ -54,6 +54,7 @@ modbus/modbus_master
 proxy/proxy
 proxy/cc_connector
 proxy/ied_connector
+proxy_iec61850/mu_proxy
 
 hmis/ems_hmi/ems_hmi
 hmis/heco_3breaker/heco_hmi

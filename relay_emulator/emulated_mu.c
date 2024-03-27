@@ -62,7 +62,7 @@
 
 #include "def.h"
 #include "packets.h"
-#include "connector_packets.h"
+#include "scada_packets.h"
 #include "net_wrapper.h"
 
 int My_SS_ID;
@@ -82,17 +82,23 @@ int main(int argc, char **argv)
     int                s,sr,num;
     struct ip_mreq     mreq;
     int                i;
-    int                ret;
+    int                ret,ret2;
     fd_set             mask;
     fd_set             read_mask, write_mask, except_mask;
-
+    int mu_proxy_in;
+    char mu_proxy_ipc_path[128];
     sv_msg             payload;
     struct timeval     now;
     int                trip;
     int                sleep_ms;
     struct timeval     sleep_timeout;
-
+    char buff[MAX_LEN];
     char               input[20];
+    signed_message *mess;
+    update_message *up;
+    signed_message *rtu_mess_header;
+    rtu_data_msg *rtu_data;
+    substation_fields *sf;
 
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
@@ -127,28 +133,41 @@ int main(int argc, char **argv)
     /*Join a group to receive all substation status  updates*/
     
     sr=-1;
+
     Alarm(PRINT,"Spines addr=%s, port=%d,my_port=%d\n",cc_addrs[0],SPINES_EXT_PORT,MU_SUBSTATION_BASE_PORT+My_SS_ID);
-    sr = Spines_Sock(cc_addrs[0],SPINES_EXT_PORT, SPINES_PRIORITY,MU_SUBSTATION_BASE_PORT+My_SS_ID);
+    sr = Spines_Sock(cc_addrs[0],SPINES_EXT_PORT, SPINES_PRIORITY,MU_EMULATOR_MCAST_PORT+My_SS_ID);
+  //  sr = Spines_SendOnly_Sock(cc_addrs[0],SPINES_EXT_PORT, SPINES_PRIORITY);
     if(sr<0){
     	Alarm(EXIT,"Error setting up mcast receiving port for all SS status updates\n" );
     }
-/*
+    else{
+    	Alarm(PRINT, "Spines INET sock created\n");
+    }
+ /*
+    memset(&name, 0 , sizeof(name));
     name.sin_family = AF_INET;
-    name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_addr.s_addr = htonl(INADDR_ANY);
     name.sin_port = htons(MU_EMULATOR_MCAST_PORT);
 
     if ( spines_bind( sr, (struct sockaddr *)&name, sizeof(name) ) < 0 ) {
         Alarm(EXIT,"Mcast: bind\n");
         
     }
-*/
-    mreq.imr_multiaddr.s_addr = inet_addr( MU_EMULATOR_MCAST_ADDR );
+    */
+    mreq.imr_multiaddr.s_addr = htonl( MU_EMULATOR_MCAST_ADDR );
     mreq.imr_interface.s_addr = htonl( INADDR_ANY );
 
-    if (setsockopt(sr, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq,sizeof(mreq)) < 0)
+    if (spines_setsockopt(sr, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq,sizeof(mreq)) < 0)
     {
         Alarm(EXIT,"Mcast: problem in setsockopt to join multicast address\n" );
     }
+    /*IPC set up for MU Proxy*/
+    mu_proxy_in = IPC_DGram_SendOnly_Sock();
+    if(mu_proxy_in<0){
+    	Alarm(EXIT, "IPC sock error for proxy\n");
+    }
+    memset(mu_proxy_ipc_path,0,sizeof(mu_proxy_ipc_path));
+    sprintf(mu_proxy_ipc_path,"%s%d",(char *)MU_IPC_OUT,My_SS_ID);
 
     FD_ZERO( &mask );
     FD_ZERO( &write_mask );
@@ -163,7 +182,20 @@ int main(int argc, char **argv)
 	if(num>0){
 		if(FD_ISSET(sr,&read_mask)){
 			printf("Spines msg\n");
-			continue;
+			memset(buff,0,MAX_LEN);
+			ret = spines_recvfrom(sr,buff,MAX_LEN,0,NULL,0);
+			if(ret==sizeof(signed_update_message)){
+				mess=(signed_message *) buff;
+				up = (update_message *)(mess+ 1);
+    				rtu_mess_header = (signed_message *)(up+1);
+    				rtu_data=(rtu_data_msg *) (rtu_mess_header+1);
+				sf=(substation_fields *)rtu_data->data;
+				printf("Message from ss=%d state=%d ts=%lu\n",sf->ss_id, sf->breaker_state,sf->dts);
+				ret2= IPC_Send(mu_proxy_in, buff,ret,mu_proxy_ipc_path);
+
+			
+			
+			}
 		
 		}//num>0 and ss event 
 		else if(FD_ISSET(0,&read_mask)){
@@ -227,7 +259,7 @@ int main(int argc, char **argv)
 
 void usage(int argc, char **argv) {
     if (argc < 2){
-        Alarm(EXIT, "Usage: ./gen_event SS_ID\n");
+        Alarm(EXIT, "Usage: ./emulated_mu SS_ID\n");
 	return;
     }
     
