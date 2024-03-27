@@ -265,6 +265,7 @@
 #define TM_IPC_IN  "/tmp/tm_ipc_in"
 #define TM_IPC_OUT  "/tmp/tm_ipc_out"
 #define CONNECTOR_IPC_OUT  "/tmp/connector_ipc_out"
+#define MU_IPC_OUT "/tmp/mu_proxy_in"
 
 /* Threshhold Crypto defines */
 #define TM_KEYS "tm_keys"
