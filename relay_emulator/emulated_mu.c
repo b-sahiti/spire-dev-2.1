@@ -57,12 +57,16 @@
 #include <string.h>
 
 #include "spu_alarm.h"
+#include "spu_events.h"
+#include "spines_lib.h"
 
 #include "def.h"
 #include "packets.h"
+#include "connector_packets.h"
+#include "net_wrapper.h"
 
 int My_SS_ID;
-
+char* cc_addrs[NUM_CC_CONNECTORS]=CC_CONNECTORS;
 void usage(int argc, char **argv);
 
 void error_and_exit(const char* msg, int ecode)
@@ -73,18 +77,18 @@ void error_and_exit(const char* msg, int ecode)
 
 int main(int argc, char **argv)
 {
-    struct sockaddr_in send_addr;
+    struct sockaddr_in send_addr,name;
     unsigned char      ttl_val;
-    int                s;
-
+    int                s,sr,num;
+    struct ip_mreq     mreq;
     int                i;
     int                ret;
+    fd_set             mask;
+    fd_set             read_mask, write_mask, except_mask;
 
     sv_msg             payload;
     struct timeval     now;
-
     int                trip;
-
     int                sleep_ms;
     struct timeval     sleep_timeout;
 
@@ -96,7 +100,7 @@ int main(int argc, char **argv)
 
     usage(argc, argv);
 
-    /* Setup socket for sending */
+    /* Setup socket for multicasting SV */
     s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s < 0) {
         Alarm(EXIT,"EVENT / SV :Mcast socket\n");
@@ -118,65 +122,105 @@ int main(int argc, char **argv)
         payload.trip[i] = 0;
     }
 
+    Alarm(PRINT, "Set up MCAST sock to send SV\n");
+
+    /*Join a group to receive all substation status  updates*/
+    
+    sr=-1;
+    Alarm(PRINT,"Spines addr=%s, port=%d,my_port=%d\n",cc_addrs[0],SPINES_EXT_PORT,MU_SUBSTATION_BASE_PORT+My_SS_ID);
+    sr = Spines_Sock(cc_addrs[0],SPINES_EXT_PORT, SPINES_PRIORITY,MU_SUBSTATION_BASE_PORT+My_SS_ID);
+    if(sr<0){
+    	Alarm(EXIT,"Error setting up mcast receiving port for all SS status updates\n" );
+    }
+/*
+    name.sin_family = AF_INET;
+    name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_port = htons(MU_EMULATOR_MCAST_PORT);
+
+    if ( spines_bind( sr, (struct sockaddr *)&name, sizeof(name) ) < 0 ) {
+        Alarm(EXIT,"Mcast: bind\n");
+        
+    }
+*/
+    mreq.imr_multiaddr.s_addr = inet_addr( MU_EMULATOR_MCAST_ADDR );
+    mreq.imr_interface.s_addr = htonl( INADDR_ANY );
+
+    if (setsockopt(sr, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq,sizeof(mreq)) < 0)
+    {
+        Alarm(EXIT,"Mcast: problem in setsockopt to join multicast address\n" );
+    }
+
+    FD_ZERO( &mask );
+    FD_ZERO( &write_mask );
+    FD_ZERO( &except_mask );
+    FD_SET( sr, &mask );
+    FD_SET( (long)0, &mask );    /* stdin */
+
     /* multicast a timestamp in ms (for debugging) and 0/1 for CLOSE/TRIP*/
     while (1) {
-    	for (i = 0; i < NUM_REPLICAS; i++) {
-        	payload.delay_ms[i] = 0;
-        	payload.trip[i] = 0;
-	}
+	read_mask=mask;
+	num=select(FD_SETSIZE,&read_mask,&write_mask,&except_mask,NULL);
+	if(num>0){
+		if(FD_ISSET(sr,&read_mask)){
+			printf("Spines msg\n");
+			continue;
+		
+		}//num>0 and ss event 
+		else if(FD_ISSET(0,&read_mask)){
+			for (i = 0; i < NUM_REPLICAS; i++) {
+        			payload.delay_ms[i] = 0;
+        			payload.trip[i] = 0;
+			}
 
-        printf("> ");
-        fflush(stdout);
-        if (scanf("%19s", input) != 1) break;
+        		printf("> ");
+        		fflush(stdout);
+        		if (scanf("%19s", input) != 1) break;
 
-        if (input[0] == 'd') {
-            if (scanf("%d", &sleep_ms) != 1)
-                error_and_exit("Expected an int as argument\n", 1);
+        		if (input[0] == 's' || input[0] == 'b') {
+            			if (input[0] == 's') {
+                			if (scanf("%d", &trip) != 1)
+                    				error_and_exit("Expected an int as argument\n", 1);
 
-            sleep_timeout.tv_sec = sleep_ms / 1000;
-            sleep_timeout.tv_usec = (sleep_ms % 1000) * 1000;
-            
-            select(0, NULL, NULL, NULL, &sleep_timeout);
+                		for (i = 0; i < NUM_REPLICAS; i++) {
+                    			payload.delay_ms[i] = 0;
+                    			payload.trip[i] = trip;
+                		}
 
-        } else if (input[0] == 's' || input[0] == 'b') {
-            if (input[0] == 's') {
-                if (scanf("%d", &trip) != 1)
-                    error_and_exit("Expected an int as argument\n", 1);
+                		payload.type = SV_SIMPLE;
+            		} else {
+                		for (i = 0; i < NUM_REPLICAS; i++) {
+                    			if (scanf("%lu", &payload.delay_ms[i]) != 1)
+                        			error_and_exit("Expected a long as argument\n", 1);
+                    			if (scanf("%d", &trip) != 1)
+                        			error_and_exit("Expected an int as argument\n", 1);
+                    			payload.trip[i] = trip;
+                		}
 
-                for (i = 0; i < NUM_REPLICAS; i++) {
-                    payload.delay_ms[i] = 0;
-                    payload.trip[i] = trip;
-                }
+                		payload.type = SV_BYZ;
+            		}
 
-                payload.type = SV_SIMPLE;
-            } else {
-                for (i = 0; i < NUM_REPLICAS; i++) {
-                    if (scanf("%lu", &payload.delay_ms[i]) != 1)
-                        error_and_exit("Expected a long as argument\n", 1);
-                    if (scanf("%d", &trip) != 1)
-                        error_and_exit("Expected an int as argument\n", 1);
-                    payload.trip[i] = trip;
-                }
+    			for (i = 0; i < NUM_REPLICAS; i++) {
+		    		Alarm(PRINT,"i=%d \tdelay=%lu, \ttrip=%d\n",i,payload.delay_ms[i],payload.trip[i]);
+    			}
+            		gettimeofday(&now, NULL);
+            		payload.time_ms = now.tv_sec * 1000 + now.tv_usec / 1000;
+	    		payload.ss_id=My_SS_ID;
 
-                payload.type = SV_BYZ;
-            }
+            		ret = sendto(s, &payload, sizeof(payload), 0, (struct sockaddr *)&send_addr, sizeof(send_addr));
 
-    	for (i = 0; i < NUM_REPLICAS; i++) {
-		    Alarm(PRINT,"i=%d \tdelay=%lu, \ttrip=%d\n",i,payload.delay_ms[i],payload.trip[i]);
-    		}
-            gettimeofday(&now, NULL);
-            payload.time_ms = now.tv_sec * 1000 + now.tv_usec / 1000;
-	    payload.ss_id=My_SS_ID;
+            		if (ret < 0)
+                		error_and_exit("Mcast: sendto\n", 1);
+            		printf("\nSimulator: Sent event\n");
 
-            ret = sendto(s, &payload, sizeof(payload), 0, (struct sockaddr *)&send_addr, sizeof(send_addr));
+			} else {
+            		printf("Invalid input \n");
+        		}//process stdin SV cmd	
+		}//num>0 and stdin	
+	
+	}//num>0
 
-            if (ret < 0)
-                error_and_exit("Mcast: sendto\n", 1);
-            printf("\nSimulator: Sent event\n");
 
-		} else {
-            printf("Invalid input \n");
-        }
+    	
     }
     return 0;
 }

@@ -259,6 +259,7 @@
 #define EXPIRATION_USEC     0
 #define SPINES_MAX_SIZE     2000
 #define RELAY_SUBSTATION_BASE_PORT      27500 // Used in CC Connectors
+#define MU_SUBSTATION_BASE_PORT      37500 // Used in CC Connectors
 
 /* IPC Communication defines */
 #define TM_IPC_IN  "/tmp/tm_ipc_in"

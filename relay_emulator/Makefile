@@ -51,13 +51,16 @@ include ../Makefile.general
 base_dir = ..
 
 TARGET=emulated_mu goose_publisher 
-INC= -I ../common $(IEC_INC) $(SPREADUTIL_INC)
+INC= -I ../common $(IEC_INC) $(SPREADUTIL_INC) $(SPINES_INC) $(TC_INC) 
+
+EMU_OBJ=emulated_mu.o \
+	../common/net_wrapper.o 
 
 all: emulated_mu goose_publisher  
 
 
-emulated_mu:	emulated_mu.o
-	$(CC) $(LDFLAGS) -o emulated_mu emulated_mu.o $(SPREADUTIL_LIB)
+emulated_mu:	$(EMU_OBJ)
+	$(CC) $(LDFLAGS) -o emulated_mu $(EMU_OBJ) $(IEC_LIB) $(SPINES_LIB) $(SPREADUTIL_LIB) $(TC_LIB)
 
 goose_publisher:	goose_publisher.o 
 	$(CC) $(LDFLAGS) -o goose_publisher goose_publisher.o $(IEC_LIB) $(SPREADUTIL_LIB)
