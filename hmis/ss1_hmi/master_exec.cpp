@@ -134,7 +134,7 @@ void Process_Message(signed_message *mess)
         printf("No browser connected\n");
         return;
     }
-
+    if(sf->ss_id==SS1_PRIME_ID){//SS1
     if(sf->breaker_state==1){//trip
         if(d->br_read_arr[0].value==0){
     		printf("Received SUBSTATION HMI UPDATE MESSAGE state=%lu, ts= %lu\n",sf->breaker_state,sf->dts);
@@ -165,6 +165,15 @@ void Process_Message(signed_message *mess)
 	d->point_arr[3].value=0;
     
     }
+    }else if(sf->ss_id==SS2_PRIME_ID){//SS2
+	    printf("SS2 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+    
+    } else if(sf->ss_id==SS3_PRIME_ID){//SS3
+	    printf("SS3 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+    }else{
+         printf("Received from unexpected substation\n");
+    }
+    
 }
 
 void Execute_Script(int s, int dummy1, void *dummy2)

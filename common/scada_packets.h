@@ -83,6 +83,14 @@
 /* Integrated SUBSTATION scenario definitions */
 #define SUBSTATION_NUM_POINT 10
 #define SUBSTATION_NUM_BREAKER 6
+#define SS1_PLC 17
+#define SS2_PLC 18
+#define SS3_PLC 19
+#define SS1_PRIME_ID MAX_NUM_SERVER_SLOTS+SS1_PLC 
+#define SS2_PRIME_ID MAX_NUM_SERVER_SLOTS+SS2_PLC 
+#define SS3_PRIME_ID MAX_NUM_SERVER_SLOTS+SS3_PLC 
+
+
 /*
  * Message types:
  *   DUMMY = dummy
