@@ -277,6 +277,13 @@
 /* Relay Emulation defines */
 #define EMULATOR_MCAST_PORT 8401
 #define EMULATOR_MCAST_ADDR (224 << 24 | 1 << 16 | 1 << 8 | 1) /* (224.1.1.1) */
+/*Emulated Merging Unit define*/
+#define MU_EMULATE 1
+#define MU_EMULATOR_MCAST_PORT 8411
+#define MU_EMULATOR_MCAST_ADDR (224 << 24 | 1 << 16 | 1 << 8 | 2) /* (224.1.1.2) */
+
+
+
 
 #define SS_KEY_SIZE 1024
 #endif /* DEF_H */

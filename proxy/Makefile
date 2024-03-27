@@ -47,13 +47,15 @@
 
 CC=gcc
 CFLAGS+= -Wall -W -g
-TARGET=proxy cc_connector ied_connector
+TARGET=proxy  ied_connector  cc_connector
+
 LIBS=-lpthread ../prime/OpenTC-1.1/TC-lib-1.0/.libs/libTC.a \
            ../spines/libspines/libspines.a ../prime/stdutil/lib/libstdutil.a \
 	   ../spines/libspread-util/src/libspread-util.a \
            ../libiec61850/.install/lib/libiec61850.a \
 		   -lrt -ldl -lcrypto -lpthread -lm
-INC= -I ../prime/stdutil/include -I ../spines/libspines/ -I ../spines/libspread-util/include/ -I ../libiec61850/.install/include/
+
+INC= -I ../prime/stdutil/include -I ../spines/libspines/ -I ../spines/libspread-util/include/ -I ../libiec61850/.install/include/ -I ../common
 OBJECTS=proxy.o \
 		../common/scada_packets.o \
 		../common/net_wrapper.o \
@@ -86,14 +88,14 @@ IED_OBJECTS=ied_connector.o \
                 ../config/config_helpers.o
 
 
-all: proxy cc_connector ied_connector 
+all: proxy ied_connector cc_connector 
 
 
 proxy: $(OBJECTS)
 	$(CC) $(LDFLAGS) -o proxy $(OBJECTS) $(LIBS)
 
 cc_connector: $(CC_OBJECTS)
-	$(CC) $(LDFLAGS) -o cc_connector $(CC_OBJECTS) $(LIBS)
+	$(CC) $(LDFLAGS)  -o cc_connector $(CC_OBJECTS) $(LIBS) 
 
 
 ied_connector: $(IED_OBJECTS)
@@ -116,7 +118,7 @@ cc_connector.o: cc_connector.c ../common/scada_packets.h \
                                 ../common/net_wrapper.h ../common/openssl_rsa.h \
                                 ../common/tc_wrapper.h ../common/itrc.h \
                                 ../common/key_value.h ../config/cJSON.h ../config/config_helpers.h
-	$(CC) -c $(CFLAGS) $(INC) -o cc_connector.o cc_connector.c
+	$(CC) -c $(CFLAGS)  $(INC) -o cc_connector.o cc_connector.c  
 
 ied_connector.o: ied_connector.c ../common/scada_packets.h \
                                 ../common/net_wrapper.h ../common/openssl_rsa.h \

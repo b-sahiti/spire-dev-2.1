@@ -59,6 +59,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "spines_lib.h"
+
 
 #include "../common/net_wrapper.h" 
 #include "../common/def.h"
@@ -100,10 +102,10 @@ void Load_SS_Conf(char *filename){
 
 int main(int argc, char *argv[])
 {
-    int i, num, ret, nBytes, sub, ret2,cc_id;
-    int ipc_sock;
+    int i, num, ret, nBytes, sub, ret2,cc_id,ret3;
+    int ipc_sock,mu_sock;
     struct timeval now;
-    struct sockaddr_in dest;
+    struct sockaddr_in dest,mu_send_addr;
     fd_set mask, tmask;
     char buff[MAX_LEN];
     signed_message *mess;
@@ -182,11 +184,33 @@ int main(int argc, char *argv[])
     printf("PROXY: Setting up ITRC CC_Proxy thread\n");
     fflush(stdout);
     pthread_create(&tid, NULL, &ITRC_CC_Connector, (void *)&itrc_thread);
+    /*Connect to SS dissemination network*/
     ss_ext_spines=Spines_Sock(cc_addrs[cc_id], ss_spines_ext_port, SPINES_PRIORITY, relay_ss_port);
     if(ss_ext_spines<0){
         printf("Cannot connect to substation dissemination Spines\n");
         fflush(stdout);
-    } 
+    }
+    if(MU_EMULATE){
+	    mu_sock=-1;
+	    //mu_sock = Spines_SendOnly_Sock(cc_addrs[cc-id], SPINES_EXT_PORT, SPINES_PRIORITY);
+	    mu_sock = Spines_Mcast_SendOnly_Sock(cc_addrs[cc_id], SPINES_EXT_PORT, SPINES_PRIORITY);
+	    if (mu_sock < 0) {
+      		printf("spines socket error: cannt set up MU mcast port\n");
+      		exit(0);
+    	}
+	    
+	    int ttl = 255;
+	    if(spines_setsockopt(mu_sock, 0, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) != 0) {
+      		printf("spines setsocket error: cannt set up MU mcast port\n");
+		exit(0);
+          }
+	  
+	  printf("Successfully set up MU MCAST \n");
+    	
+    
+    }
+
+
     printf("Connected to ss_ext_spines on %s and %d\n",cc_addrs[cc_id], relay_ss_port);
     fflush(stdout);
     FD_ZERO(&mask);
@@ -212,7 +236,7 @@ int main(int argc, char *argv[])
                     dest.sin_family = AF_INET;
                     dest.sin_port = htons(relay_ss_port);
                     dest.sin_addr.s_addr = inet_addr(relay_addrs[j]);
-                    int ret2=spines_sendto(ss_ext_spines,mess,ret,0,(struct sockaddr *)&dest, sizeof(struct sockaddr));
+                    ret2=spines_sendto(ss_ext_spines,mess,ret,0,(struct sockaddr *)&dest, sizeof(struct sockaddr));
                     if(ret2!=ret){
                         printf("Cannot send on ss_ext_spines\n");
                     }else{
@@ -221,6 +245,7 @@ int main(int argc, char *argv[])
                 } 
 
             }
+	    /*SS Mesage to be sent to CC and simulator*/
             else if (FD_ISSET(ss_ext_spines,&tmask)){
                  struct sockaddr_in  from_addr;
                  socklen_t  from_len = sizeof(from_addr);
@@ -239,6 +264,19 @@ int main(int argc, char *argv[])
                         printf("Sent %d RTU DATA to CC\n",test->machine_id);
                     }
                 }
+
+		if(MU_EMULATE){
+	    		mu_send_addr.sin_family = AF_INET;
+	    		mu_send_addr.sin_addr.s_addr=inet_addr(MU_EMULATOR_MCAST_ADDR);
+	    		mu_send_addr.sin_port = htons(MU_EMULATOR_MCAST_PORT);
+			ret3 = spines_sendto(mu_sock, buff,ret,0, (struct sockaddr*) &mu_send_addr,sizeof(struct sockaddr));
+			if(ret3!=ret){
+				printf("Error sending to emulated MUs\n");
+			}else{
+				printf("Sent on MCAST to emulate MUs\n");	
+			}
+		
+		}
                 
 
             }
