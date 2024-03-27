@@ -272,7 +272,7 @@ pvb/win-mingw/bin/rlsvgcat.exe
 
 
 # Compiled Executables
-relay_emulator/gen_event
+relay_emulator/emulated_mu
 relay_emulator/goose_publisher
 trip_master_v2/trip_master
 trip_master/trip_master
