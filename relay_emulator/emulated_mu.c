@@ -68,6 +68,8 @@
 int My_SS_ID;
 char* cc_addrs[NUM_CC_CONNECTORS]=CC_CONNECTORS;
 void usage(int argc, char **argv);
+int ss_ids[3];
+uint64_t cb_curr_dts[3];
 
 void error_and_exit(const char* msg, int ecode)
 {
@@ -168,6 +170,13 @@ int main(int argc, char **argv)
     }
     memset(mu_proxy_ipc_path,0,sizeof(mu_proxy_ipc_path));
     sprintf(mu_proxy_ipc_path,"%s%d",(char *)MU_IPC_OUT,My_SS_ID);
+    ss_ids[0]=48;
+    ss_ids[1]=49;
+    ss_ids[2]=50;
+    cb_curr_dts[0]=0;
+    cb_curr_dts[1]=0;
+    cb_curr_dts[2]=0;
+
 
     FD_ZERO( &mask );
     FD_ZERO( &write_mask );
@@ -191,8 +200,12 @@ int main(int argc, char **argv)
     				rtu_data=(rtu_data_msg *) (rtu_mess_header+1);
 				sf=(substation_fields *)rtu_data->data;
 				printf("Message from ss=%d state=%d ts=%lu\n",sf->ss_id, sf->breaker_state,sf->dts);
-				ret2= IPC_Send(mu_proxy_in, buff,ret,mu_proxy_ipc_path);
-
+				for(int i=0;i<3;i++){
+				if(ss_ids[i]==sf->ss_id && cb_curr_dts[i]<sf->dts){
+				  ret2= IPC_Send(mu_proxy_in, buff,ret,mu_proxy_ipc_path);
+				  cb_curr_dts[i]=sf->dts;
+				  }
+				}
 			
 			
 			}
