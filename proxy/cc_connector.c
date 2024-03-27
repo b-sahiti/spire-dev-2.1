@@ -263,11 +263,10 @@ int main(int argc, char *argv[])
                     else{
                         printf("Sent %d RTU DATA to CC\n",test->machine_id);
                     }
-                }
-
-		if(MU_EMULATE){
+                 if(MU_EMULATE){
+			printf("Preparing to Multicast event to all MUs\n");
 	    		mu_send_addr.sin_family = AF_INET;
-	    		mu_send_addr.sin_addr.s_addr=inet_addr(MU_EMULATOR_MCAST_ADDR);
+	    		mu_send_addr.sin_addr.s_addr=htonl(MU_EMULATOR_MCAST_ADDR);
 	    		mu_send_addr.sin_port = htons(MU_EMULATOR_MCAST_PORT);
 			ret3 = spines_sendto(mu_sock, buff,ret,0, (struct sockaddr*) &mu_send_addr,sizeof(struct sockaddr));
 			if(ret3!=ret){
@@ -276,7 +275,9 @@ int main(int argc, char *argv[])
 				printf("Sent on MCAST to emulate MUs\n");	
 			}
 		
-		}
+		}}
+
+		
                 
 
             }
