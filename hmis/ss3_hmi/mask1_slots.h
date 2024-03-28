@@ -195,7 +195,7 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
   for (int i = 0; i < SUBSTATION_NUM_POINT; i++) {
     if (d->point_arr[i].id == -1)
         continue;
-    printf("Slot Null Event i=%d, value=%d\n ",i,d->point_arr[i].value);
+    //printf("Slot Null Event i=%d, value=%d\n ",i,d->point_arr[i].value);
     if(d->point_arr[i].value ==-1)//Dont know
     {
 	pvSetPaletteBackgroundColor(p,d->point_arr[i].id,255,255,255); //White	
