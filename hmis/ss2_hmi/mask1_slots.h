@@ -185,7 +185,14 @@ static int slotInit(PARAM *p, DATA *dptr)
 	pvSetPaletteBackgroundColor(p,d->point_arr[i].id,255,0,0); //Red
 	}
    }
-  pvDownloadFile(p, "87t.png");
+  pvDownloadFile(p, "SS2_HMI.png");
+  d->ss_ids[0]=SS1_PRIME_ID;
+  d->ss_ids[1]=SS2_PRIME_ID;
+  d->ss_ids[2]=SS3_PRIME_ID;
+
+  d->ss_state[0]=-1;
+  d->ss_state[1]=-1;
+  d->ss_state[2]=-1;
     return 0;
 }
 
@@ -215,7 +222,7 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
   for(int i=0; i<SUBSTATION_NUM_POINT;i++){
   	if(d->load_dial_arr[i].id==-1)
 		continue;
-	printf("Load dial i=%d value=%d\n",i, d->load_dial_arr[i].value);
+	//printf("Load dial i=%d value=%d\n",i, d->load_dial_arr[i].value);
 	qwtDialSetValue(p,d->load_dial_arr[i].id,d->load_dial_arr[i].value);
   }
 

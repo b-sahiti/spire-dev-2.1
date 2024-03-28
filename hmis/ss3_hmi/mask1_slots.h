@@ -211,7 +211,7 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
   for(int i=0; i<SUBSTATION_NUM_POINT;i++){
         if(d->load_dial_arr[i].id==-1)
                 continue;
-        printf("Load dial i=%d value=%d\n",i, d->load_dial_arr[i].value);
+        //printf("Load dial i=%d value=%d\n",i, d->load_dial_arr[i].value);
         qwtDialSetValue(p,d->load_dial_arr[i].id,d->load_dial_arr[i].value);
   }
 

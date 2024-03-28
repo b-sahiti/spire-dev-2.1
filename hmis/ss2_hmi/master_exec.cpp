@@ -157,7 +157,10 @@ void Process_Message(signed_message *mess)
     printf("************************************Msg from SSID %d**********\n",sf->ss_id);
     if(sf->ss_id==SS1_PRIME_ID){//SS1
       printf("SS1 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+      d->ss_state[0]=sf->breaker_state;
+      //d->load_dial_arr[0].value=0;
     }else if(sf->ss_id==SS2_PRIME_ID){
+	d->ss_state[1]=sf->breaker_state;
     if(sf->breaker_state==1){//trip
         if(d->br_read_arr[0].value==0){
     		printf("Received SUBSTATION HMI UPDATE MESSAGE state=%lu, ts= %lu\n",sf->breaker_state,sf->dts);
@@ -177,8 +180,8 @@ void Process_Message(signed_message *mess)
 	d->point_arr[7].value=1;
 	d->point_arr[8].value=1;
 	d->point_arr[9].value=1;
-	d->load_dial_arr[0].value=0;
-	d->load_dial_arr[1].value=0;
+	//d->load_dial_arr[0].value=0;
+	//d->load_dial_arr[1].value=0;
     
     }else{//close
         if(d->br_read_arr[0].value==1){
@@ -200,14 +203,30 @@ void Process_Message(signed_message *mess)
 	d->point_arr[7].value=0;
 	d->point_arr[8].value=0;
 	d->point_arr[9].value=0;
-	d->load_dial_arr[0].value=75;
-	d->load_dial_arr[1].value=50;
+	//d->load_dial_arr[0].value=75;
+	//d->load_dial_arr[1].value=50;
     
     }
     }else if (sf->ss_id==SS3_PRIME_ID){
       printf("SS3 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+	d->ss_state[2]=sf->breaker_state;
+	//d->load_dial_arr[1].value=0;
     }else{
       printf("Received from unexpected substation\n");
+    }
+    if(d->ss_state[0]==0 and d->ss_state[1]==0){
+	printf("&&&&&&&&&&&&& L1=75&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
+    	d->load_dial_arr[0].value=75;
+    }else{
+    	d->load_dial_arr[0].value=0;
+    }
+
+    printf("States: ss1-%d, ss2-%d, ss3-%d\n",d->ss_state[0],d->ss_state[1],d->ss_state[2]);
+    if(d->ss_state[1]==0 and d->ss_state[2]==0){
+	printf("&&&&&&&&&&&&& L2=50&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
+    	d->load_dial_arr[1].value=50;
+    }else{
+    	d->load_dial_arr[1].value=0;
     }
 }
 
