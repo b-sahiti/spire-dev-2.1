@@ -134,6 +134,8 @@ void Process_Message(signed_message *mess)
         printf("No browser connected\n");
         return;
     }
+
+    printf("************************************Msg from SSID %d**********\n",sf->ss_id);
     if(sf->ss_id==SS1_PRIME_ID){//SS1
     if(sf->breaker_state==1){//trip
         if(d->br_read_arr[0].value==0){
