@@ -230,16 +230,16 @@ void Process_CC_Message(signed_message *mess)
    if((d->ss_read_arr[0].value==0 && d->ss_read_arr[1].value==1)&&(d->ss_read_arr[2].value==0 && d->ss_read_arr[3].value==1)){
         d->ss_arr[0].value=75;
         d->load_dial_arr[0].value=75;
-   }//l1=50 if ss1 and ss2 are closed
+   }//l1=75 if ss1 and ss2 are closed
 
    if((d->ss_read_arr[2].value==0 && d->ss_read_arr[3].value==1)&&(d->ss_read_arr[4].value==0 && d->ss_read_arr[5].value==1)){
         d->ss_arr[1].value=50;
         d->load_dial_arr[1].value=50;
-   }
+   }//l2=50 if ss3 and ss2 are closed
    if((d->ss_read_arr[4].value==0 && d->ss_read_arr[5].value==1)){
         d->ss_arr[2].value=50;
         d->load_dial_arr[2].value=50;
-   }
+   }////l3=50 if ss3 is closed
 
 }
 

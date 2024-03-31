@@ -157,8 +157,10 @@ void Process_Message(signed_message *mess)
     printf("************************************Msg from SSID %d**********\n",sf->ss_id);
     if(sf->ss_id==SS1_PRIME_ID){//SS1
       printf("SS1 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+      Append_History("SS1 Update CB Status - %s",sf->breaker_state==0? "Close":"Open");
     }else if(sf->ss_id==SS2_PRIME_ID){
 	    printf("SS2 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+	    Append_History("SS2 Update CB Status - %s",sf->breaker_state==0? "Close":"Open");
     }else if(sf->ss_id==SS3_PRIME_ID){
     if(sf->breaker_state==1){//trip
         if(d->br_read_arr[0].value==0){

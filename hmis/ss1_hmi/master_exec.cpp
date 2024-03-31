@@ -169,9 +169,11 @@ void Process_Message(signed_message *mess)
     }
     }else if(sf->ss_id==SS2_PRIME_ID){//SS2
 	    printf("SS2 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+	    Append_History("SS2 Update CB Status - %s",sf->breaker_state==0? "Close":"Open");
     
     } else if(sf->ss_id==SS3_PRIME_ID){//SS3
 	    printf("SS3 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
+	    Append_History("SS3 Update CB Status - %s",sf->breaker_state==0? "Close":"Open");
     }else{
          printf("Received from unexpected substation\n");
     }
