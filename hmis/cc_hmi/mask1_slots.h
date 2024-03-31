@@ -293,6 +293,22 @@ static int slotInit(PARAM *p, DATA *dptr)
        qwtDialSetValue(p,d->load_dial_arr[i].id,d->load_dial_arr[i].value);
   }
 
+ if(d->ss_arr[0].value==75){
+ 	pvSetText(p,label_g1,pvtr("G1:75 kW"));
+ }else{
+ 	pvSetText(p,label_g1,pvtr("G1:0 kW"));
+ }
+
+ if(d->ss_arr[1].value==50 && d->ss_arr[2].value==50){
+ 	pvSetText(p,label_g2,pvtr("G2:100 kW"));
+ }else if(d->ss_arr[1].value==50 && d->ss_arr[2].value==0){
+ 	pvSetText(p,label_g2,pvtr("G2:50 kW"));
+ } else if(d->ss_arr[1].value==0 && d->ss_arr[2].value==50){
+ 	pvSetText(p,label_g2,pvtr("G2:50 kW"));
+ } else{
+ 	pvSetText(p,label_g2,pvtr("G2:0 kW"));
+ }
+
   pvSetValue(p,script_history,25);
   pvSetEditable(p,script_history,0);
 
@@ -414,6 +430,22 @@ static int slotNullEvent(PARAM *p, DATA *dptr)
       }
       dptr->print_seq = Script_History_Seq;
   }
+
+  if(d->ss_arr[0].value==75){
+        pvSetText(p,label_g1,pvtr("G1:75 kW"));
+ }else{
+        pvSetText(p,label_g1,pvtr("G1:0 kW"));
+ }
+
+ if(d->ss_arr[1].value==50 && d->ss_arr[2].value==50){
+        pvSetText(p,label_g2,pvtr("G2:100 kW"));
+ }else if(d->ss_arr[1].value==50 && d->ss_arr[2].value==0){
+        pvSetText(p,label_g2,pvtr("G2:50 kW"));
+ } else if(d->ss_arr[1].value==0 && d->ss_arr[2].value==50){
+        pvSetText(p,label_g2,pvtr("G2:50 kW"));
+ } else{
+        pvSetText(p,label_g2,pvtr("G2:0 kW"));
+ }
 
   /* Update the Script Indicator Label */
   if (Script_Running == 0) 
