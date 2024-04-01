@@ -115,6 +115,8 @@ typedef struct data_model_d // (todo: define your data structure here)
     breaker_info br_read_arr[NUM_BREAKER];
     breaker_info br_write_arr[NUM_BREAKER];
     point_info load_dial_arr[SUBSTATION_NUM_POINT];
+    int ss_ids[NUM_SUBSTATIONS];
+    int ss_state[NUM_SUBSTATIONS];
 }
 data_model;
 
