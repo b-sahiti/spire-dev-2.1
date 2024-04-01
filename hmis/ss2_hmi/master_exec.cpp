@@ -158,7 +158,7 @@ void Process_Message(signed_message *mess)
     if(sf->ss_id==SS1_PRIME_ID){//SS1
       printf("SS1 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
       d->ss_state[0]=sf->breaker_state;
-      Append_History("SS1 Update CB Status - %s",sf->breaker_state==0? "Close":"Open");
+      Append_History("SS1 Update - %s",sf->breaker_state==0? "Close":"Open");
       //d->load_dial_arr[0].value=0;
     }else if(sf->ss_id==SS2_PRIME_ID){
 	d->ss_state[1]=sf->breaker_state;
@@ -211,7 +211,7 @@ void Process_Message(signed_message *mess)
     }else if (sf->ss_id==SS3_PRIME_ID){
       printf("SS3 status update state=%d,ts=%lu\n",sf->breaker_state,sf->dts);
 	d->ss_state[2]=sf->breaker_state;
-        Append_History("SS3 Update CB Status - %s",sf->breaker_state==0? "Close":"Open");
+        Append_History("SS3 Update - %s",sf->breaker_state==0? "Close":"Open");
 	//d->load_dial_arr[1].value=0;
     }else{
       printf("Received from unexpected substation\n");

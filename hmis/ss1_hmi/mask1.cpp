@@ -223,7 +223,7 @@ static int generated_defineMask(PARAM *p)
 
 
   pvQLabel(p,label_alert,0);
-  pvSetGeometry(p,label_alert,x+550,y-30,100,30);
+  pvSetGeometry(p,label_alert,x+550,y-30,100,80);
   pvSetText(p,label_alert,"ALERTS");
   pvSetFont(p,label_alert,"Ubuntu",14,1,0,0,0);
 
