@@ -273,11 +273,12 @@ int main(int argc, char* argv[])
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     Alarm_set_types(PRINT);
-    Alarm_set_types(STATUS);
-    Alarm_set_types(DEBUG);
+    //Alarm_set_types(STATUS);
+    //Alarm_set_types(DEBUG);
     
     usage(argc,argv);
     print_notice();
+    Alarm(PRINT, "My substation Id is %d\n",My_ID);
     Load_SS_Conf(My_ID);
 
     /* Initialize crypto stuff */
@@ -752,8 +753,8 @@ static void usage(int argc, char *argv[])
         Alarm(EXIT,"Usage: sudo ./counting_dst_proxy interface SSID\n");
     }
     interface=argv[1];
-    My_ID=argv[2];
-
+    sscanf(argv[2],"%d",&My_ID);
+    Alarm(PRINT, "My substation Id is %d\n",My_ID);
     Type = RTU_TYPE;
     Prime_Client_ID = MAX_NUM_SERVER_SLOTS + My_ID;
     seq_num = 1;
