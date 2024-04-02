@@ -594,6 +594,7 @@ static void PROXY_Send_Ack()
 		Alarm(EXIT,"Spines sento error\n");
         }
     }
+    send_to_cc();
 
     Alarm(DEBUG,"Sent type=%s, m_id=%u,dts=%lu,len=%u\n",curr_b->type == SIGNED_CLOSE_ACK ? "CLOSE ACK":"TRIP ACK",curr_b->m_id,curr_b->dts,curr_b->len);
 }
