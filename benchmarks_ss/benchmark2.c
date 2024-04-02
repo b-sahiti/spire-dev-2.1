@@ -165,8 +165,8 @@ static int setup_mcast()
     if (s < 0) {
         Alarm(EXIT,"Error setting up Mcast socket\n");
     }
+    /*
     memset(&name,0,sizeof(name));
-    memset(&send_addr,0,sizeof(send_addr));
     name.sin_family = AF_INET;
     name.sin_addr.s_addr = htonl(Breaker_Addr);
     name.sin_port = htons(EMULATOR_MCAST_PORT);
@@ -174,7 +174,9 @@ static int setup_mcast()
     if(bind(s, (struct sockaddr *)&name, sizeof(name) ) < 0) {
           Alarm(EXIT, "Error binding mcast port\n");
         }
+*/
     /*set up sender address*/
+    memset(&send_addr,0,sizeof(send_addr));
     send_addr.sin_family = AF_INET;
     send_addr.sin_addr.s_addr = htonl(EMULATOR_MCAST_ADDR);
     send_addr.sin_port = htons(EMULATOR_MCAST_PORT);
@@ -619,7 +621,7 @@ static void print_notice()
 
 static void usage(int argc, char **argv){
         ack_count=0;
-        delta.sec=2;
+        delta.sec=1;
         delta.usec=0;
     	gt_count=0;
 
