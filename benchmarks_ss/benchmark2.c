@@ -627,14 +627,14 @@ static void usage(int argc, char **argv){
                 Alarm(EXIT,"./benchmark <SS_ID> <count>");
         }
 
-        if(argv[1]<17 || argv[1]>19){
-                Alarm(EXIT,"We support Substation Ids >17 and <20\n");
-        }
         sscanf(argv[1],"%d",&My_SS_ID);
+        if(My_SS_ID<17 || My_SS_ID>19){
+                Alarm(EXIT,"We support Substation Ids 17,18 ansd 19 , given %d\n",My_SS_ID);
+        }
+        sscanf(argv[2],"%d",&total);
         if(total<0 || total>1000000){
                 Alarm(EXIT,"We support benchmark count 1-1000000\n");
         }
-        sscanf(argv[2],"%d",&total);
 
         latencies=malloc((total+1) * sizeof(*latencies));
         memset(latencies,0,(total+1) * sizeof(*latencies));

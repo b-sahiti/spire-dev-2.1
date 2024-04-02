@@ -114,10 +114,10 @@ int main(int argc, char** argv)
 
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
-    //Alarm_set_types(PRINT);
+    Alarm_set_types(PRINT);
     //Alarm_set_types(PRINT|STATUS);
     //Alarm_set_types(STATUS);
-    Alarm_set_types(PRINT|DEBUG|STATUS);
+    //Alarm_set_types(PRINT|DEBUG|STATUS);
     usage(argc, argv);
     Load_SS_Conf(My_SS_ID);
     print_notice();
@@ -557,21 +557,21 @@ static void print_notice()
 static void usage(int argc, char **argv){
 	trip=0;
 	so_far=0;
-	delta.sec=2;
+	delta.sec=1;
 	delta.usec=0;
 
 	if(argc<3){
 		Alarm(EXIT,"./benchmark <SS_ID> <count>");
 	}
 
-	if(argv[1]<17 || argv[1]>19){
-		Alarm(EXIT,"We support Substation Ids >17 and <20\n");
-	}
 	sscanf(argv[1],"%d",&My_SS_ID);
+	if(My_SS_ID<17 || My_SS_ID>19){
+		Alarm(EXIT,"We support Substation Ids 17,18 and 19 but given =%d\n",argv[1]);
+	}
+	sscanf(argv[2],"%d",&total);
 	if(total<0 || total>1000000){
 		Alarm(EXIT,"We support benchmark count 1-1000000\n");
 	}
-	sscanf(argv[2],"%d",&total);
 	
 	latencies=malloc((total+1) * sizeof(*latencies));
         memset(latencies,0,(total+1) * sizeof(*latencies));
