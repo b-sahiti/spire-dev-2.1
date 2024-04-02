@@ -74,7 +74,8 @@ COUNT_CB_OBJ= counting_cb_proxy.o \
         	../common/ss_net_wrapper.o \
         	../common/ss_tc_wrapper.o \
         	../common/ss_openssl_rsa.o \
-		../common/packets.o
+		../common/packets.o \
+		../common/scada_packets.o
 
 all:  relay_proxy simple_cb_proxy counting_cb_proxy mu_proxy 
 

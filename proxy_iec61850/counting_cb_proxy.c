@@ -47,6 +47,7 @@
 
 #include "def.h"
 #include "ss_net_wrapper.h"
+#include "scada_packets.h"
 #include "packets.h"
 #include "ss_openssl_rsa.h"
 
@@ -77,17 +78,20 @@
 #define BRKR_T0 20000
 
 
+int My_ID,Prime_Client_ID,Type,seq_num;
+int32u My_Incarnation;
+signed_update_message up_mess;
+int Curr_num_SM = NUM_SM;
+char* cc_addrs[NUM_CC_CONNECTORS] = CC_CONNECTORS;
 
+static uint64_t dts;
+static int      b_state;
+static int      s,count,s1;
 static uint64_t trips[NUM_REPLICAS+1];
 static uint64_t closes[NUM_REPLICAS+1];
 static tm_msg *curr_b;
-static int      s,count,s1;
-//static int m,ack_count,total,gt_count;
-static uint64_t dts;
-static int      b_state;
-//static sv_msg payload;
-//static struct sockaddr_in send_addr,name;
 
+static void send_to_cc();
 static GooseReceiver goose_receiver;
 static GooseSubscriber goose_subscriber;
 static char* interface;
@@ -240,16 +244,18 @@ static void goose_listener(GooseSubscriber subscriber, void* parameter)
 
 
 static void Init_Spines(){
-    char *  sp_addr = SPINES_PROXY_ADDR;
+    char *  sp_addr = Breaker_Addr;
+    int ss_spines_ext_port=SS_SPINES_EXT_BASE_PORT+((My_ID-16)*10);
+
  /* Initialize Spines network */
-    s = Spines_Sock(sp_addr, SS_SPINES_EXT_PORT, SPINES_PRIORITY, TM_PROXY_PORT);
+    s = Spines_Sock(sp_addr, ss_spines_ext_port, SPINES_PRIORITY, TM_PROXY_PORT);
 
     if (s < 0) {
         Alarm(EXIT,"Spines socket error\n");
     }
     Alarm(PRINT,"Spines socket connected s=%d\n",s);
 
-    s1 = Spines_Sock(sp_addr, SS_SPINES_EXT_PORT, SPINES_PRIORITY, BREAKER_PORT);
+    s1 = Spines_Sock(sp_addr, ss_spines_ext_port, SPINES_PRIORITY, BREAKER_PORT);
 
     if (s1 < 0) {
         Alarm(EXIT,"Spines breaker socket error\n");
@@ -263,20 +269,22 @@ int main(int argc, char* argv[])
     int     ret;
 
 
-    sleep(15);
+    sleep(2);
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     Alarm_set_types(PRINT);
-    //Alarm_set_types(STATUS);
-    //Alarm_set_types(DEBUG);
+    Alarm_set_types(STATUS);
+    Alarm_set_types(DEBUG);
     
     usage(argc,argv);
     print_notice();
-    
+    Load_SS_Conf(My_ID);
+
     /* Initialize crypto stuff */
     OPENSSL_RSA_Init();
     OPENSSL_RSA_Read_Keys(1, RSA_CLIENT, "../trip_master_v2/tm_keys");
     Alarm(DEBUG, "Dest Proxy 2.0 read keys\n");
+    Alarm(DEBUG,"Opened Prime RSA keys\n");
 
     count=0;
     b_state=-1;
@@ -296,6 +304,13 @@ int main(int argc, char* argv[])
         {
             PROXY_Force_Startup();
         }
+	else{
+		//If uncommented, will start breaker in close mode
+                publish_goose(0, 0);
+                // If uncommented, will start breaker in trip mode
+                //publish_goose(0, 1);
+	
+	}
     while(b_state==-1){
         PROXY_Startup();
 
@@ -316,7 +331,13 @@ static void PROXY_Force_Startup()
     // If uncommented, will start breaker in trip mode
     //publish_goose(0, 1);
     // If uncommented, will start breaker in close mode
-    publish_goose(0, 0);
+    //publish_goose(0, 0);
+    sp_time now;
+
+    b_state = STATE_CLOSE;
+    now=E_get_time();
+    dts = ((now.sec * 1000 + now.usec / 1000) / DTS_INTERVAL) * DTS_INTERVAL;
+    PROXY_Send_Ack();
 
 }
 static void PROXY_Startup()
@@ -442,15 +463,16 @@ static void Handle_Relay_Trip(tm_msg *mess)
         return;
     }
     //we have sufficient trips to issue Breaker trip
-    //TODO: CB trip issue and get status change masg
-    publish_goose(0, 1);
 
-    /*
+    
     if(TESTING){
-    b_state=STATE_TRIP;
-    PROXY_Send_Ack();
+    	b_state=STATE_TRIP;
+    	PROXY_Send_Ack();
+    }else{
+    	publish_goose(0, 1);
+    
     }
-    */
+    
     memset(trips, 0, sizeof(trips));
     memset(closes, 0, sizeof(closes));
     
@@ -482,14 +504,12 @@ static void Handle_Relay_Close(tm_msg *mess)
         return;
     }
     //we have sufficient trips to issue Breaker trip
-    //TODO: CB trip issue and get status change masg
-    publish_goose(0, 0);
-    /*
     if(TESTING){
-    b_state=STATE_CLOSE;
-    PROXY_Send_Ack();
+    	b_state=STATE_CLOSE;
+    	PROXY_Send_Ack();
+    }else{
+    	publish_goose(0, 0);
     }
-    */
     memset(trips, 0, sizeof(trips));
     memset(closes, 0, sizeof(closes));
     return;
@@ -606,6 +626,90 @@ static void PROXY_Send_Breaker_Ack()
 }
 
 
+
+static void send_to_cc(){
+    signed_message *mess;
+    update_message *up;
+    signed_message *rtu_mess_header;
+    rtu_data_msg *rtu_data;
+    struct timeval now;
+    substation_fields* sf;
+    struct sockaddr_in dest;
+    int ret;
+
+    //ITRC_Client: Construct signed_update_message and fill main header
+    mess = PKT_Construct_Signed_Message(sizeof(signed_update_message) - sizeof(signed_message));
+    mess->machine_id = Prime_Client_ID;
+    mess->len = sizeof(signed_update_message) - sizeof(signed_message);
+    mess->type = UPDATE;
+    mess->incarnation = My_Incarnation;
+    //ITRC Clinet: Fill update message header
+    up = (update_message *)(mess + 1);
+    up->server_id = Prime_Client_ID;
+    up->seq_num = seq_num;
+    //Proxy:RTU_data's signed message header
+    rtu_mess_header = (signed_message *)(up+1);
+    rtu_mess_header->machine_id = Prime_Client_ID;
+    rtu_mess_header->len = sizeof(rtu_data_msg);
+    rtu_mess_header->type = RTU_DATA;
+    rtu_mess_header->incarnation = My_Incarnation;
+    //RTU Data filling
+    rtu_data=(rtu_data_msg *) (rtu_mess_header+1);
+    rtu_data->seq.seq_num = seq_num;
+    rtu_data->seq.incarnation = My_Incarnation;
+    rtu_data->rtu_id = My_ID;
+    rtu_data->scen_type = INTEGRATED_CC;
+    gettimeofday(&now, NULL);
+    rtu_data->sec  = now.tv_sec;
+    rtu_data->usec = now.tv_usec;
+    //Fill data or substaion fields for this scenario
+    sf = (substation_fields *) rtu_data->data;
+    if (b_state==STATE_CLOSE)
+        sf->breaker_state= 0;
+    else if (b_state == STATE_TRIP)
+       sf->breaker_state=1;
+    else
+       sf->breaker_state=2;
+    sf->dts = dts;
+    sf->ss_id=Prime_Client_ID;
+    OPENSSL_RSA_Sign(((byte*)mess) + SIGNATURE_SIZE,
+           sizeof(signed_message) + mess->len - SIGNATURE_SIZE,
+           (byte*)mess);
+    signed_message *test;
+    test=(signed_message *)mess;
+    Alarm(DEBUG,"Post Sign: type=%lu, id=%lu\n",test->type,test->machine_id);
+    Alarm(DEBUG,"\n");
+    Alarm(DEBUG,"\n");
+    //send to cc connector
+    dest.sin_family = AF_INET;
+    int relay_ss_port=RELAY_SUBSTATION_BASE_PORT+((My_ID-16)*10);
+    dest.sin_port = htons(relay_ss_port);
+    for(int i=0;i<NUM_CC_CONNECTORS;i++){
+        dest.sin_addr.s_addr = inet_addr(cc_addrs[i]);
+        ret = spines_sendto(s, mess,sizeof(signed_update_message),
+           0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+        if (ret != sizeof(signed_update_message)) {
+                Alarm(PRINT,"Error Sending to cc_connector ret=%d mess size=%d\n",ret,sizeof(*mess));
+        }else{
+        Alarm(PRINT,"Sent to cc_connector (%s:%d) seq_num=%d size=%d\n",cc_addrs[i],relay_ss_port,seq_num,ret);
+        }
+    }
+    //send to ss hmi
+    dest.sin_port = htons(relay_ss_port);
+    dest.sin_addr.s_addr = inet_addr(HMI_Addr);
+    ret = spines_sendto(s, mess,sizeof(signed_update_message),
+           0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+    if (ret != sizeof(signed_update_message)) {
+        Alarm(PRINT,"Error Sending to ss HMI ret=%d mess size=%d\n",ret,sizeof(*mess));
+        return;
+    }else{
+        Alarm(PRINT,"Sent to ss hmi seq_num=%d size=%d\n",seq_num,ret);
+    }
+    seq_num+=1;
+
+}
+
+
 static void print_notice()
 {
   Alarm( PRINT, "/==================================================================================\\\n");
@@ -641,10 +745,20 @@ static void print_notice()
 
 static void usage(int argc, char *argv[])
 {
+    struct timeval now;
     count=0;
-    if (argc!=2){
-        Alarm(EXIT,"Usage: sudo ./counting_dst_proxy interface\n");
+
+    if (argc!=3){
+        Alarm(EXIT,"Usage: sudo ./counting_dst_proxy interface SSID\n");
     }
     interface=argv[1];
+    My_ID=argv[2];
+
+    Type = RTU_TYPE;
+    Prime_Client_ID = MAX_NUM_SERVER_SLOTS + My_ID;
+    seq_num = 1;
+    gettimeofday(&now, NULL);
+    My_Incarnation = now.tv_sec;
+
     return;
 }
