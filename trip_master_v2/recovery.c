@@ -138,8 +138,8 @@ void RECOVERY_Handle_Proxy_Msg(int s, int source, void * dummy_p)
     }
     /* Check claimed sender is consistent with spines addrs (spines does signing) */
     if (mess->m_id != (NUM_REPLICAS+1)) return;
-    if (from_addr.sin_addr.s_addr != inet_addr(SPINES_PROXY_ADDR)) {
-        Alarm(PRINT, "TM Receiver: Recovery: Source %s (from external spines) does not match expected address %s (proxy)", from_addr.sin_addr.s_addr,SPINES_PROXY_ADDR );
+    if (from_addr.sin_addr.s_addr != inet_addr(Breaker_Addr)) {
+        Alarm(PRINT, "TM Receiver: Recovery: Source %s (from external spines) does not match expected address %s (proxy)", from_addr.sin_addr.s_addr,Breaker_Addr);
         return;
     }
 
