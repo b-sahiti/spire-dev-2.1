@@ -56,6 +56,7 @@ Spire supports six different example SCADA systems:
 - `ems`: a system modeling an Energy Management System (EMS) that controls
   several different types of generators with different ramp-up rates and
   renewable energy sources that can be connected to the grid or deactivated
+- 'cc_hmi': an example of end-to-end integrated system that can simultaneously support pnnl plcs and three substaions. The three subsations will be running Spire for the Substation at subsattion level.
 
 Spire's SCADA Master can support all of these systems; we provide a separate
 HMI for each system. Note that because the `pnnl` and `heco` systems use the
@@ -170,6 +171,9 @@ There are several configuration files relevant to the Spire system:
    documentation for details. Note that internal and external Spines networks
    may use different configuration files.
 
+5. Subsation configuration: `common/ss<id>.conf`
+   - The files are configuration files for susbations (needed for integrated scenario with cc_hmi and also for Spire for the Substation). They have four relay addresses, a breaker address and subsation HMI address. 
+   
 ---
 
 ## Installation Prerequisites
@@ -256,6 +260,9 @@ below to build Spire.
 2. Build Spire, including SCADA Master, HMIs, PLCs, and Prime (from top-level Spire directory):
 
         make
+3. If running integrated scenario with cc_hmi, we need to compile Spire for the Substaion code too with:
+	make substation
+
 
 ### Building for Performance Benchmarks
 
@@ -381,6 +388,9 @@ generated before the system can run.
       key pair and all SCADA master and client public keys, and the threshold
       crypto public key.
 
+4. Trip Master Keys 
+	cd trip_master;./gen_keys
+	cd trip_master_v2;./gen_keys
 ---
 
 ## Running
@@ -462,13 +472,15 @@ parameters in `common/def.h`
 
 4. Run PLC/RTU proxies
 
-   To run:
+   4.1 To run all other than substations:
 
         cd proxy; ./proxy id SPINES_RTU_ADDR:SPINES_EXT_PORT 1
 
    The `id` should be the ID of this proxy, where IDs range from 0 to
    `NUM_RTU - 1`. This ID is also used to look up information about the PLC/RTU
    in the `config.json` file.
+   4.2 To run substations needed by integrated scenario:
+	Please refer to `README_Spire_Substation.md`
 
 5. Run the HMIs
 
@@ -735,4 +747,4 @@ To run this example, execute the following:
     configurations. Examples of these are provided in the
     `prime/bin` directory. Note that the IPs, Ports and ID in
     `new_conf.txt` file of these directories need to be modified to match the
-    testbed.
+testbed.

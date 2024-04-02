@@ -152,6 +152,8 @@ Spire for the Substation: `README_Spire_Substation.md`
 
 ## 5. Version Notes
 
+Spire 3.0 Beta for the first time provided end-to-end intrusion-tolerance capabilities.
+
 Spire 2.1 adds reconfiguration support to Spire.
 
 Spire 2.0 extends the Spire 1.3 to support real-time
