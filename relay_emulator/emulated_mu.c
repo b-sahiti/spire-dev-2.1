@@ -104,7 +104,8 @@ int main(int argc, char **argv)
 
     setlinebuf(stdout);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
-    Alarm_set_types(PRINT|STATUS|DEBUG);
+    Alarm_set_types(PRINT);
+    //Alarm_set_types(PRINT|STATUS|DEBUG);
 
     usage(argc, argv);
 

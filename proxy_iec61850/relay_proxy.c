@@ -121,7 +121,7 @@ int main(int argc, char** argv)
     setlinebuf(stdout);
     Alarm_set_types(PRINT);
     Alarm_set_types(STATUS);
-    Alarm_set_types(DEBUG);
+    //Alarm_set_types(DEBUG);
     
     Usage(argc, argv);
     first_r=1;

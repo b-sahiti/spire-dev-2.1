@@ -109,7 +109,7 @@ int main(int argc, char** argv)
     setlinebuf(stdout);
     Alarm_set_types(PRINT);
     Alarm_set_types(STATUS);
-    Alarm_set_types(DEBUG);
+    //Alarm_set_types(DEBUG);
     Alarm_enable_timestamp_high_res("%m/%d/%y %H:%M:%S");
     Usage(argc, argv);
     Alarm(PRINT, "Using interface %s\n", interface);
