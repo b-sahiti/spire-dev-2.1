@@ -29,8 +29,8 @@ control-center-level operations typically have a latency requirement of
 requirements as low as a quarter-power cycle (For 60Hz, this is 4.167ms). 
 
 We have developed Spire as a toolkit that contains modules to support
-intrusion-tolerance for power grid control systems at both the control-center
-and substation levels.
+intrusion-tolerance for power grid control systems at: the control-center
+level, substation level  and across both levels end-to-end.
 
 ---
 
@@ -39,6 +39,9 @@ and substation levels.
 Spire consists of three components: **Spire** and **Confidential Spire** for
 intrusion-tolerant SCADA at the control-center level, and **Spire for the
 Substation** at the substation level.
+
+Note that Spire at control center level can work with Spire for the Subsatation
+providing end-to-end resilience.
 
 ### Spire
         
@@ -102,9 +105,9 @@ LAN, while meeting the stringent quarter-of-a-power-cycle latency requirement
 (4.167ms).
 
 The Spire for the Substation includes a Trip Master, Relay Proxy and Breaker
-Proxy. Additionally, we provide emulated relays to simulate real substation
-fault-free and faulty operating conditions. We support substation communication
-protocol of IEC61850 using open-source libiec61850.
+Proxy. Additionally, we provide emulated merging unit and emulated relays to
+simulate real substation fault-free and faulty operating conditions. We support
+substation communication protocol of IEC61850 using open-source libiec61850.
 
 ---
 
@@ -152,7 +155,8 @@ Spire for the Substation: `README_Spire_Substation.md`
 
 ## 5. Version Notes
 
-Spire 3.0 Beta for the first time provided end-to-end intrusion-tolerance capabilities.
+Spire 3.0 Beta for the first time provided end-to-end intrusion-tolerance
+capabilities at all levels of the power grid.
 
 Spire 2.1 adds reconfiguration support to Spire.
 
